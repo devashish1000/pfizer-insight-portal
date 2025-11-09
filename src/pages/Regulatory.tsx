@@ -92,9 +92,10 @@ const Regulatory = () => {
     const actionItems = filteredData.filter(
       (d) =>
         d.key_issues &&
-        (d.key_issues.toLowerCase().includes("regulatory query") ||
-          d.key_issues.toLowerCase().includes("info requested") ||
-          d.key_issues.trim() !== ""),
+        d.key_issues.trim() !== "" &&
+        d.key_issues.trim() !== "—" &&
+        d.key_issues.toLowerCase() !== "n/a" &&
+        d.key_issues.toLowerCase() !== "none",
     ).length;
 
     const globalMarkets = new Set(filteredData.map((d) => d.region).filter(Boolean)).size;
@@ -154,7 +155,7 @@ const Regulatory = () => {
           record.summary,
           record.last_updated_by,
         ]
-          .map((field) => `"${field || ""}"`)
+          .map((field) => `"${(field || "").toString().replace(/"/g, '""')}"`)
           .join(","),
       ),
     ].join("\n");
