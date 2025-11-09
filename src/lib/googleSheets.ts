@@ -157,6 +157,49 @@ export const fetchRegulatoryData = async (): Promise<any[]> => {
   }
 };
 
+// Fetch data for Medical Research Insights
+export const fetchMedicalResearchData = async (): Promise<any[]> => {
+  const RANGE = "Medical_Research_Insights!A:V";
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${GOOGLE_SHEETS_API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch data: ${response.statusText}`);
+
+    const data = await response.json();
+    const rows = data.values || [];
+    const dataRows = rows.slice(1); // skip headers
+
+    return dataRows.map((row: string[]) => ({
+      timestamp: row[0] || "",
+      title: row[1] || "",
+      sentiment: row[2] || "",
+      source: row[3] || "",
+      source_type: row[4] || "",
+      publication_date: row[5] || "",
+      therapeutic_area: row[6] || "",
+      impact_level: row[7] || "",
+      reach: row[8] || "",
+      mentions: row[9] || "",
+      engagement: row[10] || "",
+      region: row[11] || "",
+      summary: row[12] || "",
+      key_findings: row[13] || "",
+      study_design: row[14] || "",
+      sample_size: row[15] || "",
+      journal: row[16] || "",
+      authors: row[17] || "",
+      affiliation: row[18] || "",
+      impact_score: row[19] || "",
+      data_source: row[20] || "",
+      last_updated_by: row[21] || "",
+    }));
+  } catch (error) {
+    console.error("Error fetching Medical Research data:", error);
+    return [];
+  }
+};
+
 // Fetch and merge data from all Google Sheets tabs
 export const fetchAllSheetsData = async (): Promise<any[]> => {
   // First, detect and map all sheets dynamically

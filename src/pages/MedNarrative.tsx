@@ -1,102 +1,182 @@
+import { useState, useEffect, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { FilterBar } from "@/components/FilterBar";
 import { GlassCard } from "@/components/GlassCard";
+import { Stethoscope, TrendingUp, MessageSquare, Eye } from "lucide-react";
+import { fetchMedicalResearchData } from "@/lib/googleSheets";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Microscope, BookOpen, TrendingUp, MessageSquare, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface MedicalResearchRecord {
+  timestamp: string;
+  title: string;
+  sentiment: string;
+  source: string;
+  source_type: string;
+  publication_date: string;
+  therapeutic_area: string;
+  impact_level: string;
+  reach: string;
+  mentions: string;
+  engagement: string;
+  region: string;
+  summary: string;
+  key_findings: string;
+  study_design: string;
+  sample_size: string;
+  journal: string;
+  authors: string;
+  affiliation: string;
+  impact_score: string;
+  data_source: string;
+  last_updated_by: string;
+}
 
 const MedNarrative = () => {
-  // Dummy state for refresh - in production this would fetch actual data
-  const handleRefresh = () => {
-    console.log(`[${new Date().toLocaleTimeString()}] Medical Research data refreshed`);
+  const [data, setData] = useState<MedicalResearchRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSentiment, setSelectedSentiment] = useState<string>("All Sentiments");
+  const [selectedSourceType, setSelectedSourceType] = useState<string>("All Source Types");
+  const [selectedImpact, setSelectedImpact] = useState<string>("All Impact Levels");
+  const [selectedRecord, setSelectedRecord] = useState<MedicalResearchRecord | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [startDate, setStartDate] = useState<Date | undefined>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date;
+  });
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+
+  const loadData = async () => {
+    setLoading(true);
+    const records = await fetchMedicalResearchData();
+    const sortedRecords = records
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 50);
+    setData(sortedRecords);
+    setLoading(false);
   };
 
-  const filters = [
-    { label: "Sentiment" },
-    { label: "Source Type" },
-    { label: "Impact Level" },
-    { label: "Date Range" },
-  ];
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 3600000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const narratives = [
-    {
-      id: "MN-2024-089",
-      title: "Breakthrough Immunotherapy Results Published in NEJM",
-      source: "New England Journal of Medicine",
-      date: "2024-03-10",
-      sentiment: "Positive",
-      reach: "High",
-      impact: "Significant",
-      summary: "Phase III trial demonstrates 47% improvement in progression-free survival compared to standard of care.",
-      mentions: 234,
-      engagement: "12.4K",
-    },
-    {
-      id: "MN-2024-090",
-      title: "Rare Disease Treatment Shows Promise in Early Clinical Data",
-      source: "The Lancet",
-      date: "2024-03-08",
-      sentiment: "Positive",
-      reach: "Medium",
-      impact: "Moderate",
-      summary: "First-in-human study reveals favorable safety profile and preliminary efficacy signals in ultra-rare genetic disorder.",
-      mentions: 156,
-      engagement: "8.2K",
-    },
-    {
-      id: "MN-2024-091",
-      title: "Cardiovascular Safety Profile Update from Real-World Evidence",
-      source: "JAMA Cardiology",
-      date: "2024-03-05",
-      sentiment: "Neutral",
-      reach: "High",
-      impact: "Monitoring",
-      summary: "Large observational study confirms established cardiovascular safety profile across diverse patient populations.",
-      mentions: 189,
-      engagement: "9.8K",
-    },
-  ];
-
-  const metrics = [
-    { label: "Active Narratives", value: "67", icon: BookOpen, color: "text-cyan-glow" },
-    { label: "Positive Sentiment", value: "78%", icon: TrendingUp, color: "text-success" },
-    { label: "Media Mentions", value: "1,247", icon: MessageSquare, color: "text-cyan-glow" },
-    { label: "Total Reach", value: "2.4M", icon: Eye, color: "text-warning" },
-  ];
-
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment.toLowerCase()) {
-      case "positive":
-        return "bg-success/10 text-success border-success/30";
-      case "neutral":
-        return "bg-text-light-gray/10 text-text-light-gray border-text-light-gray/30";
-      case "negative":
-        return "bg-destructive/10 text-destructive border-destructive/30";
-      default:
-        return "bg-text-light-gray/10 text-text-light-gray border-text-light-gray/30";
+  const handleManualRefresh = async () => {
+    setIsManualRefreshing(true);
+    try {
+      await loadData();
+      const timestamp = new Date().toLocaleTimeString();
+      console.log(`[${timestamp}] Medical Research data refreshed - ${data.length} records`);
+      toast({
+        title: "Data refreshed successfully",
+        description: `Updated at ${timestamp}`,
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast({
+        title: "Refresh failed",
+        description: "Please try again",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setTimeout(() => setIsManualRefreshing(false), 300);
     }
   };
 
-  const handleExport = () => {
-    const headers = ["ID", "Title", "Source", "Date", "Sentiment", "Reach", "Impact", "Summary", "Mentions", "Engagement"];
+  const sentiments = useMemo(
+    () => ["All Sentiments", ...Array.from(new Set(data.map((d) => d.sentiment).filter(Boolean)))],
+    [data]
+  );
+  const sourceTypes = useMemo(
+    () => ["All Source Types", ...Array.from(new Set(data.map((d) => d.source_type).filter(Boolean)))],
+    [data]
+  );
+  const impactLevels = useMemo(
+    () => ["All Impact Levels", ...Array.from(new Set(data.map((d) => d.impact_level).filter(Boolean)))],
+    [data]
+  );
+
+  const filteredData = useMemo(() => {
+    return data.filter((record) => {
+      if (!selectedSentiment.startsWith("All") && record.sentiment !== selectedSentiment) return false;
+      if (!selectedSourceType.startsWith("All") && record.source_type !== selectedSourceType) return false;
+      if (!selectedImpact.startsWith("All") && record.impact_level !== selectedImpact) return false;
+
+      if (startDate || endDate) {
+        const recordDate = new Date(record.timestamp);
+        if (startDate && recordDate < startDate) return false;
+        if (endDate) {
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (recordDate > endOfDay) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [data, selectedSentiment, selectedSourceType, selectedImpact, startDate, endDate]);
+
+  const metrics = useMemo(() => {
+    const activeNarratives = filteredData.length;
+    const positiveSentiment = filteredData.filter((d) => d.sentiment?.toLowerCase() === "positive").length;
+    const positivePct = activeNarratives > 0 ? Math.round((positiveSentiment / activeNarratives) * 100) : 0;
+    const totalMentions = filteredData.reduce((sum, d) => sum + (parseInt(d.mentions) || 0), 0);
+    const totalReach = filteredData.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0);
+
+    return {
+      activeNarratives,
+      positivePct: `${positivePct}%`,
+      totalMentions: totalMentions.toLocaleString(),
+      totalReach: totalReach > 1000000 ? `${(totalReach / 1000000).toFixed(1)}M` : totalReach.toLocaleString(),
+    };
+  }, [filteredData]);
+
+  const exportToCSV = () => {
+    const headers = [
+      "Timestamp",
+      "Title",
+      "Sentiment",
+      "Source",
+      "Source Type",
+      "Publication Date",
+      "Therapeutic Area",
+      "Impact Level",
+      "Reach",
+      "Mentions",
+      "Engagement",
+      "Region",
+      "Summary",
+    ];
+
     const csvContent = [
       headers.join(","),
-      ...narratives.map((narrative) =>
+      ...filteredData.map((record) =>
         [
-          narrative.id,
-          narrative.title,
-          narrative.source,
-          narrative.date,
-          narrative.sentiment,
-          narrative.reach,
-          narrative.impact,
-          narrative.summary,
-          narrative.mentions,
-          narrative.engagement,
+          record.timestamp,
+          record.title,
+          record.sentiment,
+          record.source,
+          record.source_type,
+          record.publication_date,
+          record.therapeutic_area,
+          record.impact_level,
+          record.reach,
+          record.mentions,
+          record.engagement,
+          record.region,
+          record.summary,
         ]
           .map((field) => `"${(field || "").toString().replace(/"/g, '""')}"`)
-          .join(","),
+          .join(",")
       ),
     ].join("\n");
 
@@ -107,90 +187,350 @@ const MedNarrative = () => {
     a.download = `Medical_Research_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    
+
     toast({
       title: "✅ Exported filtered data to CSV",
-      description: `${narratives.length} records exported`,
+      description: `${filteredData.length} records exported`,
       duration: 3000,
       className: "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20",
     });
   };
 
+  const getSentimentColor = (sentiment: string) => {
+    const s = sentiment?.toLowerCase() || "";
+    if (s.includes("positive")) return "bg-success/20 text-success border-success/30";
+    if (s.includes("neutral")) return "bg-text-light-gray/20 text-text-light-gray border-text-light-gray/30";
+    if (s.includes("negative")) return "bg-destructive/20 text-destructive border-destructive/30";
+    return "bg-muted/20 text-muted-foreground border-muted/30";
+  };
+
+  const getImpactColor = (impact: string) => {
+    const i = impact?.toLowerCase() || "";
+    if (i.includes("significant") || i.includes("high")) return "bg-cyan-glow/20 text-cyan-glow border-cyan-glow/30";
+    if (i.includes("moderate") || i.includes("medium")) return "bg-warning/20 text-warning border-warning/30";
+    if (i.includes("low")) return "bg-text-light-gray/20 text-text-light-gray border-text-light-gray/30";
+    return "bg-muted/20 text-muted-foreground border-muted/30";
+  };
+
   return (
     <DashboardLayout>
-      <div className="min-h-screen flex flex-col">
-        <DashboardHeader 
-          title="Medical Research Insights" 
-          subtitle="Medical communication monitoring and sentiment analysis"
-          icon={Microscope}
-          onRefresh={handleRefresh}
-          onExport={handleExport}
-        />
-        
-        <FilterBar filters={filters} />
-        
-        <div className="container mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {metrics.map((metric) => (
-              <GlassCard key={metric.label}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-text-light-gray mb-1">{metric.label}</p>
-                    <p className="text-3xl font-bold text-text-off-white">{metric.value}</p>
-                  </div>
-                  <metric.icon className={`w-10 h-10 ${metric.color}`} />
-                </div>
-              </GlassCard>
-            ))}
-          </div>
+      <DashboardHeader
+        title="Medical Research Insights"
+        subtitle="Medical communication monitoring and sentiment analysis"
+        icon={Stethoscope}
+        onRefresh={handleManualRefresh}
+        isRefreshing={isManualRefreshing}
+        onExport={exportToCSV}
+      />
 
-          <GlassCard>
-            <h2 className="text-xl font-semibold text-text-off-white mb-6">Recent Medical Narratives</h2>
-            <div className="space-y-4">
-              {narratives.map((narrative) => (
-                <div
-                  key={narrative.id}
-                  className="p-5 rounded-lg bg-cyan-glow/5 border border-cyan-glow/10 hover:border-cyan-glow/30 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-text-off-white">{narrative.title}</h3>
-                        <Badge variant="outline" className={getSentimentColor(narrative.sentiment)}>
-                          {narrative.sentiment}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-text-light-gray mb-3">
-                        <span className="font-medium">{narrative.source}</span> • {narrative.date}
-                      </p>
-                      <p className="text-sm text-text-off-white/80 mb-4">{narrative.summary}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-cyan-glow/10">
-                    <div>
-                      <p className="text-xs text-text-light-gray mb-1">Reach</p>
-                      <p className="text-sm font-medium text-text-off-white">{narrative.reach}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-text-light-gray mb-1">Impact</p>
-                      <p className="text-sm font-medium text-text-off-white">{narrative.impact}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-text-light-gray mb-1">Mentions</p>
-                      <p className="text-sm font-medium text-text-off-white">{narrative.mentions}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-text-light-gray mb-1">Engagement</p>
-                      <p className="text-sm font-medium text-text-off-white">{narrative.engagement}</p>
-                    </div>
-                  </div>
-                </div>
+      <div className="container mx-auto px-6 pt-4 pb-2 md:pt-6">
+        {/* Filters */}
+        <div className="mb-6 p-0 bg-transparent">
+          <div className="flex flex-wrap gap-3 items-center w-full">
+            <select
+              value={selectedSentiment}
+              onChange={(e) => setSelectedSentiment(e.target.value)}
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors"
+            >
+              {sentiments.map((sentiment) => (
+                <option key={sentiment} value={sentiment}>
+                  {sentiment}
+                </option>
               ))}
+            </select>
+
+            <select
+              value={selectedSourceType}
+              onChange={(e) => setSelectedSourceType(e.target.value)}
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors"
+            >
+              {sourceTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedImpact}
+              onChange={(e) => setSelectedImpact(e.target.value)}
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors"
+            >
+              {impactLevels.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+
+            <DateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+            />
+          </div>
+        </div>
+
+        {/* Separator line */}
+        <div className="border-t border-cyan-glow/10 mt-4 mb-6" />
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <GlassCard className="p-6 hover:shadow-lg hover:shadow-cyan-glow/10 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-light-gray text-sm mb-1">Active Narratives</p>
+                {loading ? (
+                  <Skeleton className="h-9 w-16" />
+                ) : (
+                  <p className="text-3xl font-bold text-cyan-glow">{metrics.activeNarratives}</p>
+                )}
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-cyan-glow/10 flex items-center justify-center">
+                <Stethoscope className="w-6 h-6 text-cyan-glow" />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6 hover:shadow-lg hover:shadow-success/10 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-light-gray text-sm mb-1">Positive Sentiment</p>
+                {loading ? (
+                  <Skeleton className="h-9 w-16" />
+                ) : (
+                  <p className="text-3xl font-bold text-success">{metrics.positivePct}</p>
+                )}
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-success" />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6 hover:shadow-lg hover:shadow-cyan-glow/10 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-light-gray text-sm mb-1">Media Mentions</p>
+                {loading ? (
+                  <Skeleton className="h-9 w-20" />
+                ) : (
+                  <p className="text-3xl font-bold text-cyan-glow">{metrics.totalMentions}</p>
+                )}
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-cyan-glow/10 flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-cyan-glow" />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6 hover:shadow-lg hover:shadow-warning/10 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-light-gray text-sm mb-1">Total Reach</p>
+                {loading ? (
+                  <Skeleton className="h-9 w-20" />
+                ) : (
+                  <p className="text-3xl font-bold text-warning">{metrics.totalReach}</p>
+                )}
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
+                <Eye className="w-6 h-6 text-warning" />
+              </div>
             </div>
           </GlassCard>
         </div>
+
+        {/* Data Table */}
+        <GlassCard className="overflow-hidden">
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="p-8 space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : filteredData.length === 0 ? (
+              <div className="p-8 text-center text-text-light-gray">
+                No records found matching the selected filters.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-cyan-glow/10 hover:bg-transparent">
+                    <TableHead className="text-cyan-glow font-semibold">Title</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Sentiment</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Source</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Publication Date</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Therapeutic Area</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Impact</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Reach</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Mentions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.map((record, index) => (
+                    <TableRow
+                      key={index}
+                      className="border-cyan-glow/10 hover:bg-cyan-glow/5 hover:border-l-2 hover:border-l-cyan-glow transition-all duration-300 cursor-pointer"
+                      onClick={() => {
+                        setSelectedRecord(record);
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      <TableCell className="font-medium text-text-off-white max-w-md">
+                        <div className="truncate">{record.title}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getSentimentColor(record.sentiment)}>{record.sentiment}</Badge>
+                      </TableCell>
+                      <TableCell className="text-text-light-gray text-sm">{record.source_type}</TableCell>
+                      <TableCell className="text-text-off-white">{record.publication_date}</TableCell>
+                      <TableCell className="text-text-off-white">{record.therapeutic_area}</TableCell>
+                      <TableCell>
+                        <Badge className={getImpactColor(record.impact_level)}>{record.impact_level}</Badge>
+                      </TableCell>
+                      <TableCell className="text-text-off-white">{record.reach}</TableCell>
+                      <TableCell className="text-text-off-white">{record.mentions}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <div className="px-6 py-4 border-t border-cyan-glow/10">
+            <p className="text-sm text-text-light-gray">
+              Showing {filteredData.length} of {data.length} records
+            </p>
+          </div>
+        </GlassCard>
       </div>
+
+      {/* Detail Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-background/95 border-cyan-glow/20 animate-in fade-in-0 zoom-in-95 duration-300">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-cyan-glow pr-8">{selectedRecord?.title}</DialogTitle>
+          </DialogHeader>
+
+          {selectedRecord && (
+            <div className="space-y-4 text-text-off-white">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Sentiment</p>
+                  <Badge className={getSentimentColor(selectedRecord.sentiment)}>
+                    {selectedRecord.sentiment}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Impact Level</p>
+                  <Badge className={getImpactColor(selectedRecord.impact_level)}>
+                    {selectedRecord.impact_level}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-text-light-gray mb-1">Summary</p>
+                <p className="text-sm">{selectedRecord.summary}</p>
+              </div>
+
+              {selectedRecord.key_findings && (
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Key Findings</p>
+                  <p className="text-sm">{selectedRecord.key_findings}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Source</p>
+                  <p className="text-sm">{selectedRecord.source}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Publication Date</p>
+                  <p className="text-sm">{selectedRecord.publication_date}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Therapeutic Area</p>
+                  <p className="text-sm">{selectedRecord.therapeutic_area}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Region</p>
+                  <p className="text-sm">{selectedRecord.region}</p>
+                </div>
+              </div>
+
+              {selectedRecord.study_design && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-text-light-gray mb-1">Study Design</p>
+                    <p className="text-sm">{selectedRecord.study_design}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-light-gray mb-1">Sample Size</p>
+                    <p className="text-sm">{selectedRecord.sample_size}</p>
+                  </div>
+                </div>
+              )}
+
+              {selectedRecord.journal && (
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Journal</p>
+                  <p className="text-sm">{selectedRecord.journal}</p>
+                </div>
+              )}
+
+              {selectedRecord.authors && (
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Authors</p>
+                  <p className="text-sm">{selectedRecord.authors}</p>
+                </div>
+              )}
+
+              {selectedRecord.affiliation && (
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Affiliation</p>
+                  <p className="text-sm">{selectedRecord.affiliation}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Mentions</p>
+                  <p className="text-sm font-semibold">{selectedRecord.mentions}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Engagement</p>
+                  <p className="text-sm font-semibold">{selectedRecord.engagement}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Impact Score</p>
+                  <p className="text-sm font-semibold">{selectedRecord.impact_score}</p>
+                </div>
+              </div>
+
+              {selectedRecord.data_source && (
+                <div>
+                  <p className="text-sm text-text-light-gray mb-1">Data Source</p>
+                  <a
+                    href={selectedRecord.data_source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-cyan-glow hover:underline"
+                  >
+                    {selectedRecord.data_source}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
