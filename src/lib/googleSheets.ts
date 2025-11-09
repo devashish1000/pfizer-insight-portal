@@ -4,7 +4,7 @@ import { IntelligenceData } from "@/components/IntelligenceTable";
 // For now, we'll use a placeholder that users can replace
 const GOOGLE_SHEETS_API_KEY = "AIzaSyDGzvIPk1cZ867bZdD58biqZdnPpqSQG4U";
 const SPREADSHEET_ID = "161GLwIcjtp0uJ0Dyb9v3ZnoPRf7FQ7nc8kMG-autv_k";
-const RANGE = "Sheet1!A:G"; // Adjust based on your sheet structure
+const RANGE = "Sheet1!A1:G1000"; // Adjust based on your sheet structure
 
 export const fetchSheetData = async (): Promise<IntelligenceData[]> => {
   // If API key is not set, return sample data for testing
