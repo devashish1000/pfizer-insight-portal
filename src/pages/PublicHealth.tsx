@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Globe2, TrendingUp, AlertTriangle, Activity } from "lucide-react";
 
 const PublicHealth = () => {
+  // Dummy state for refresh - in production this would fetch actual data
+  const handleRefresh = () => {
+    console.log(`[${new Date().toLocaleTimeString()}] Public Health data refreshed`);
+  };
+
   const filters = [
     { label: "Region" },
     { label: "Severity" },
@@ -89,6 +94,7 @@ const PublicHealth = () => {
           title="Public Health & Forecasts" 
           subtitle="Epidemiological monitoring and predictive health intelligence"
           icon={Globe2}
+          onRefresh={handleRefresh}
         />
         
         <FilterBar filters={filters} />

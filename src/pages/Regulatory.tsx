@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useRefreshData } from "@/hooks/useRefreshData";
+import { toast } from "@/hooks/use-toast";
 
 interface RegulatoryRecord {
   timestamp: string;
@@ -42,25 +44,50 @@ const Regulatory = () => {
   const [selectedType, setSelectedType] = useState<string>("All");
   const [selectedRecord, setSelectedRecord] = useState<RegulatoryRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    const records = await fetchRegulatoryData();
+    // Sort by timestamp descending and take the most recent 20
+    const sortedRecords = records
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 20);
+    setData(sortedRecords);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const records = await fetchRegulatoryData();
-      // Sort by timestamp descending and take the most recent 20
-      const sortedRecords = records
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 20);
-      setData(sortedRecords);
-      setLoading(false);
-    };
     loadData();
 
-    // Refresh every 10 minutes
-    // Change this in useEffect()
+    // Refresh every hour
     const interval = setInterval(loadData, 3600000); // 1 hour
     return () => clearInterval(interval);
   }, []);
+
+  const handleManualRefresh = async () => {
+    setIsManualRefreshing(true);
+    try {
+      await loadData();
+      const timestamp = new Date().toLocaleTimeString();
+      console.log(`[${timestamp}] Regulatory data refreshed - ${data.length} records`);
+      toast({
+        title: "Data refreshed successfully",
+        description: `Updated at ${timestamp}`,
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast({
+        title: "Refresh failed",
+        description: "Please try again",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setTimeout(() => setIsManualRefreshing(false), 300);
+    }
+  };
 
   // Extract unique values for filters
   const agencies = useMemo(() => ["All", ...Array.from(new Set(data.map((d) => d.agency).filter(Boolean)))], [data]);
@@ -196,6 +223,8 @@ const Regulatory = () => {
         title="Regulatory Intelligence Tracker"
         subtitle="Real-time submission tracking and regulatory pathway monitoring"
         icon={Scale}
+        onRefresh={handleManualRefresh}
+        isRefreshing={isManualRefreshing}
       />
 
       <div className="p-6 space-y-6">

@@ -7,6 +7,11 @@ import { Progress } from "@/components/ui/progress";
 import { Beaker, CheckCircle2, HourglassIcon, Calendar, Flag, MoreVertical } from "lucide-react";
 
 const ClinicalTrials = () => {
+  // Dummy state for refresh - in production this would fetch actual data
+  const handleRefresh = () => {
+    console.log(`[${new Date().toLocaleTimeString()}] Clinical Trials data refreshed`);
+  };
+
   const filters = [
     { label: "Therapeutic Area" },
     { label: "Drug Name" },
@@ -109,6 +114,7 @@ const ClinicalTrials = () => {
           title="Clinical Trials Lens" 
           subtitle="Last updated: 14:32 EST"
           icon={Beaker}
+          onRefresh={handleRefresh}
         />
         
         <FilterBar filters={filters} />

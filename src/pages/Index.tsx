@@ -6,6 +6,7 @@ import { MetricCards } from "@/components/MetricCards";
 import { IntelligenceTable, IntelligenceData } from "@/components/IntelligenceTable";
 import { fetchAllSheetsData } from "@/lib/googleSheets";
 import { LayoutDashboard, RefreshCw } from "lucide-react";
+import { useRefreshData } from "@/hooks/useRefreshData";
 
 const Index = () => {
   const {
@@ -17,6 +18,8 @@ const Index = () => {
     refetchInterval: 60 * 60 * 1000, // 1 hour
     staleTime: 60 * 60 * 1000,
   });
+
+  const { isRefreshing, refreshData } = useRefreshData(["all-sheets-data"]);
 
   useEffect(() => {
     const interval = setInterval(() => window.location.reload(), 10 * 60 * 1000);
@@ -62,7 +65,9 @@ const Index = () => {
           <DashboardHeader 
             title="Pfizer Intelligence Hub"
             subtitle="Real-time global medical and regulatory updates"
-            icon={LayoutDashboard} 
+            icon={LayoutDashboard}
+            onRefresh={refreshData}
+            isRefreshing={isRefreshing}
           />
           <div className="flex items-center justify-center h-64">
             <RefreshCw className="w-8 h-8 text-cyan-glow animate-spin" />
@@ -75,11 +80,13 @@ const Index = () => {
   return (
     <DashboardLayout>
       <div className="min-h-screen flex flex-col">
-        <DashboardHeader 
-          title="Pfizer Intelligence Hub"
-          subtitle="Real-time global medical and regulatory updates"
-          icon={LayoutDashboard} 
-        />
+          <DashboardHeader 
+            title="Pfizer Intelligence Hub"
+            subtitle="Real-time global medical and regulatory updates"
+            icon={LayoutDashboard}
+            onRefresh={refreshData}
+            isRefreshing={isRefreshing}
+          />
         <div className="container mx-auto px-6 py-8">
           <MetricCards
             totalToday={metrics.totalToday}

@@ -54,6 +54,22 @@ export default {
   			'panel-gray': 'hsl(var(--panel-gray))',
   			'text-off-white': 'hsl(var(--text-off-white))',
   			'text-light-gray': 'hsl(var(--text-light-gray))',
+  			purple: {
+  				'400': 'hsl(270 91% 65%)',
+  				'500': 'hsl(270 91% 55%)'
+  			},
+  			green: {
+  				'400': 'hsl(142 71% 55%)',
+  				'500': 'hsl(142 71% 45%)'
+  			},
+  			orange: {
+  				'400': 'hsl(25 95% 63%)',
+  				'500': 'hsl(25 95% 53%)'
+  			},
+  			cyan: {
+  				'400': 'hsl(189 85% 60%)',
+  				'500': 'hsl(189 85% 50%)'
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

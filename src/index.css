@@ -145,4 +145,17 @@
   .button-expand:hover {
     transform: scale(1.03);
   }
+
+  /* Glow shadow effects */
+  .shadow-glow-cyan {
+    box-shadow: 0 0 20px hsl(189 100% 50% / 0.4);
+  }
+
+  .shadow-glow-red {
+    box-shadow: 0 0 20px hsl(0 84% 60% / 0.4);
+  }
+
+  .shadow-glow-amber {
+    box-shadow: 0 0 20px hsl(43 96% 56% / 0.4);
+  }
 }

@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Microscope, BookOpen, TrendingUp, MessageSquare, Eye } from "lucide-react";
 
 const MedNarrative = () => {
+  // Dummy state for refresh - in production this would fetch actual data
+  const handleRefresh = () => {
+    console.log(`[${new Date().toLocaleTimeString()}] Medical Research data refreshed`);
+  };
+
   const filters = [
     { label: "Sentiment" },
     { label: "Source Type" },
@@ -79,6 +84,7 @@ const MedNarrative = () => {
           title="Medical Research Insights" 
           subtitle="Medical communication monitoring and sentiment analysis"
           icon={Microscope}
+          onRefresh={handleRefresh}
         />
         
         <FilterBar filters={filters} />

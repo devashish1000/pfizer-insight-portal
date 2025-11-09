@@ -1,4 +1,4 @@
-import { LucideIcon, Search, Download, User } from "lucide-react";
+import { LucideIcon, Search, Download, User, RefreshCw } from "lucide-react";
 
 interface DashboardHeaderProps {
   title?: string;
@@ -6,6 +6,8 @@ interface DashboardHeaderProps {
   icon?: LucideIcon;
   showSearch?: boolean;
   showExport?: boolean;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const DashboardHeader = ({ 
@@ -14,6 +16,8 @@ export const DashboardHeader = ({
   icon: Icon,
   showSearch = true,
   showExport = true,
+  onRefresh,
+  isRefreshing = false,
 }: DashboardHeaderProps) => {
   return (
     <header className="frosted-glass border-b border-cyan-glow/10 px-6 py-3 flex shrink-0 items-center justify-between whitespace-nowrap">
@@ -45,6 +49,17 @@ export const DashboardHeader = ({
           </div>
         )}
         
+        {onRefresh && (
+          <button 
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="group flex size-10 cursor-pointer items-center justify-center rounded-full bg-cyan-glow/10 transition-all duration-300 hover:bg-cyan-glow/20 hover:shadow-glow-cyan disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh data"
+          >
+            <RefreshCw className={`w-5 h-5 text-cyan-glow transition-all duration-300 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        )}
+
         {showExport && (
           <button className="flex h-10 min-w-0 items-center justify-center gap-2 overflow-hidden rounded-lg border border-cyan-glow/30 bg-cyan-glow/10 px-4 text-sm font-medium leading-normal text-cyan-glow transition-all duration-300 hover:bg-cyan-glow/20 hover:shadow-glow-cyan">
             <Download className="w-4 h-4" />

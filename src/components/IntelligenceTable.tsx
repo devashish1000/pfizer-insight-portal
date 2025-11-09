@@ -98,17 +98,22 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
     if (!sourceSheet) return { label: "General", color: "bg-muted/50 text-muted-foreground hover:bg-muted/70" };
     
     const normalized = sourceSheet.toLowerCase();
+    
+    // Map sheet names to friendly labels
+    if (normalized === "sheet1") {
+      return { label: "Global Intelligence", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/30 pulse-on-hover" };
+    }
     if (normalized.includes("regulatory")) {
-      return { label: "Regulatory", color: "bg-cyan-glow/20 text-cyan-glow border-cyan-glow/30 hover:bg-cyan-glow/30 pulse-on-hover" };
+      return { label: "Regulatory Intelligence", color: "bg-cyan-glow/20 text-cyan-glow border-cyan-glow/30 hover:bg-cyan-glow/30 pulse-on-hover" };
     }
     if (normalized.includes("clinical")) {
-      return { label: "Clinical", color: "bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30 pulse-on-hover" };
+      return { label: "Clinical Trials", color: "bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30 pulse-on-hover" };
     }
     if (normalized.includes("research") || normalized.includes("medical")) {
-      return { label: "Research", color: "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 pulse-on-hover" };
+      return { label: "Medical Research", color: "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 pulse-on-hover" };
     }
     if (normalized.includes("public_health") || normalized.includes("health")) {
-      return { label: "Public Health", color: "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 pulse-on-hover" };
+      return { label: "Public Health & Forecasts", color: "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 pulse-on-hover" };
     }
     return { label: sourceSheet, color: "bg-muted/50 text-muted-foreground hover:bg-muted/70" };
   };
