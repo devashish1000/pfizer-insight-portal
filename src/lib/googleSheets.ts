@@ -79,6 +79,62 @@ export const fetchRegulatoryData = async (): Promise<any[]> => {
   }
 };
 
+// Fetch and merge data from all Google Sheets tabs
+export const fetchAllSheetsData = async (): Promise<any[]> => {
+  const sheets = [
+    { name: "Sheet1", range: "Sheet1!A:G" },
+    { name: "Regulatory_Intelligence_Tracker", range: "Regulatory_Intelligence_Tracker!A:U" },
+    { name: "Clinical_Trials", range: "Clinical_Trials!A:Z" },
+    { name: "Medical_Research", range: "Medical_Research!A:Z" },
+    { name: "Public_Health", range: "Public_Health!A:Z" },
+  ];
+
+  const allData: any[] = [];
+
+  for (const sheet of sheets) {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheet.range}?key=${GOOGLE_SHEETS_API_KEY}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.warn(`Failed to fetch ${sheet.name}: ${response.statusText}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const rows = data.values || [];
+
+      if (rows.length <= 1) continue; // Skip if only headers or empty
+
+      const headers = rows[0];
+      const dataRows = rows.slice(1);
+
+      // Map rows to objects with dynamic headers
+      const sheetData = dataRows.map((row: string[]) => {
+        const record: any = { _sourceSheet: sheet.name };
+        headers.forEach((header: string, index: number) => {
+          const key = header.toLowerCase().replace(/ /g, "_");
+          record[key] = row[index] || "";
+        });
+        return record;
+      });
+
+      allData.push(...sheetData);
+    } catch (error) {
+      console.error(`Error fetching ${sheet.name}:`, error);
+    }
+  }
+
+  // Sort by timestamp descending
+  allData.sort((a, b) => {
+    const dateA = new Date(a.timestamp || 0).getTime();
+    const dateB = new Date(b.timestamp || 0).getTime();
+    return dateB - dateA;
+  });
+
+  return allData;
+};
+
 // Sample data for testing
 const getSampleData = (): IntelligenceData[] => [
   {
