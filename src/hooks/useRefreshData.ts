@@ -13,8 +13,16 @@ export const useRefreshData = (queryKey: string[]) => {
       await queryClient.invalidateQueries({ queryKey });
       await queryClient.refetchQueries({ queryKey });
       
-      const timestamp = new Date().toLocaleTimeString();
-      console.log(`[${timestamp}] Data refreshed for: ${queryKey.join(", ")}`);
+      const timestamp = new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      
+      // Dispatch custom event for timestamp updates
+      window.dispatchEvent(new Event('data-refreshed'));
+      
+      console.log(`[QA] Last Updated → ${timestamp}`);
       
       toast({
         title: "Data refreshed successfully",

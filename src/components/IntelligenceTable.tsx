@@ -16,8 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, ExternalLink } from "lucide-react";
+import { Search, ExternalLink, Info } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { sheetLabelMap } from "@/lib/googleSheets";
 import {
   Dialog,
   DialogContent,
@@ -46,24 +48,23 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [impactFilter, setImpactFilter] = useState<string>("all");
   const [regionFilter, setRegionFilter] = useState<string>("all");
-  const [sourceTypeFilter, setSourceTypeFilter] = useState<string>("all");
   const [selectedRecord, setSelectedRecord] = useState<IntelligenceData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const categories = useMemo(
-    () => ["all", ...Array.from(new Set(data.map((item) => item.category).filter(Boolean)))],
-    [data]
-  );
+  const categories = useMemo(() => {
+    return Object.values(sheetLabelMap).map(mapping => ({
+      value: mapping.name,
+      label: mapping.name,
+      description: mapping.description
+    }));
+  }, []);
+  
   const impacts = useMemo(
     () => ["all", ...Array.from(new Set(data.map((item) => item.impact).filter(Boolean)))],
     [data]
   );
   const regions = useMemo(
     () => ["all", ...Array.from(new Set(data.map((item) => item.region).filter(Boolean)))],
-    [data]
-  );
-  const sourceTypes = useMemo(
-    () => ["all", ...Array.from(new Set(data.map((item) => item._sourceSheet).filter(Boolean)))],
     [data]
   );
 
@@ -76,16 +77,17 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
         item.source?.toLowerCase().includes(search.toLowerCase()) ||
         item.compound_name?.toLowerCase().includes(search.toLowerCase());
 
-      const matchesCategory =
-        categoryFilter === "all" || item.category === categoryFilter;
+      const itemSourceLabel = sheetLabelMap[item._sourceSheet || '']?.name || item.category;
+      const matchesCategory = 
+        categoryFilter === "all" || 
+        itemSourceLabel === categoryFilter || 
+        item.category === categoryFilter;
       const matchesImpact = impactFilter === "all" || item.impact === impactFilter;
       const matchesRegion = regionFilter === "all" || item.region === regionFilter;
-      const matchesSourceType =
-        sourceTypeFilter === "all" || item._sourceSheet === sourceTypeFilter;
 
-      return matchesSearch && matchesCategory && matchesImpact && matchesRegion && matchesSourceType;
+      return matchesSearch && matchesCategory && matchesImpact && matchesRegion;
     });
-  }, [data, search, categoryFilter, impactFilter, regionFilter, sourceTypeFilter]);
+  }, [data, search, categoryFilter, impactFilter, regionFilter]);
 
   const getImpactColor = (impact: string) => {
     const lower = impact?.toLowerCase() || "";
@@ -97,25 +99,25 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
   const getSourceTypeBadge = (sourceSheet: string | undefined) => {
     if (!sourceSheet) return { label: "General", color: "bg-muted/50 text-muted-foreground hover:bg-muted/70" };
     
-    const normalized = sourceSheet.toLowerCase();
+    const mapping = sheetLabelMap[sourceSheet];
     
-    // Map sheet names to friendly labels
-    if (normalized === "sheet1") {
-      return { label: "Global Intelligence", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/30 pulse-on-hover" };
+    if (!mapping) {
+      return { label: sourceSheet, color: "bg-gray-500/20 text-gray-400 border-gray-500/30 hover:bg-gray-500/30 pulse-on-hover" };
     }
-    if (normalized.includes("regulatory")) {
-      return { label: "Regulatory Intelligence", color: "bg-cyan-glow/20 text-cyan-glow border-cyan-glow/30 hover:bg-cyan-glow/30 pulse-on-hover" };
-    }
-    if (normalized.includes("clinical")) {
-      return { label: "Clinical Trials", color: "bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30 pulse-on-hover" };
-    }
-    if (normalized.includes("research") || normalized.includes("medical")) {
-      return { label: "Medical Research", color: "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 pulse-on-hover" };
-    }
-    if (normalized.includes("public_health") || normalized.includes("health")) {
-      return { label: "Public Health & Forecasts", color: "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 pulse-on-hover" };
-    }
-    return { label: sourceSheet, color: "bg-muted/50 text-muted-foreground hover:bg-muted/70" };
+
+    const colorClasses: Record<string, string> = {
+      cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/30 pulse-on-hover',
+      teal: 'bg-teal-500/20 text-teal-400 border-teal-500/30 hover:bg-teal-500/30 pulse-on-hover',
+      green: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 pulse-on-hover',
+      purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30 pulse-on-hover',
+      orange: 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 pulse-on-hover',
+      indigo: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/30 pulse-on-hover',
+      pink: 'bg-pink-500/20 text-pink-400 border-pink-500/30 hover:bg-pink-500/30 pulse-on-hover',
+    };
+
+    const color = colorClasses[mapping.color] || colorClasses.cyan;
+
+    return { label: mapping.name, color };
   };
 
   const handleRowClick = (item: IntelligenceData) => {
@@ -136,18 +138,40 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
               className="pl-10 bg-secondary border-border"
             />
           </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border z-50">
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat === "all" ? "All Categories" : cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border z-50">
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="text-cyan-glow/60 hover:text-cyan-glow transition-colors">
+                    <Info className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs bg-glass/95 backdrop-blur-md border-cyan-glow/20">
+                  <div className="space-y-2 text-xs">
+                    {categories.map((cat) => (
+                      <div key={cat.value} className="flex flex-col">
+                        <span className="font-semibold text-cyan-glow">{cat.label}</span>
+                        <span className="text-text-light-gray">{cat.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Select value={impactFilter} onValueChange={setImpactFilter}>
             <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border">
               <SelectValue placeholder="Impact" />
@@ -168,18 +192,6 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
               {regions.map((reg) => (
                 <SelectItem key={reg} value={reg}>
                   {reg === "all" ? "All Regions" : reg}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={sourceTypeFilter} onValueChange={setSourceTypeFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border">
-              <SelectValue placeholder="Source Type" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border z-50">
-              {sourceTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type === "all" ? "All Sources" : type}
                 </SelectItem>
               ))}
             </SelectContent>

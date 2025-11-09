@@ -1,4 +1,5 @@
 import { LucideIcon, Search, Download, User, RefreshCw } from "lucide-react";
+import { LastUpdatedTimestamp } from "./LastUpdatedTimestamp";
 
 interface DashboardHeaderProps {
   title?: string;
@@ -34,6 +35,7 @@ export const DashboardHeader = ({
           {subtitle && (
             <p className="text-sm text-text-light-gray mt-1">{subtitle}</p>
           )}
+          <LastUpdatedTimestamp />
         </div>
       </div>
       

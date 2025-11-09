@@ -6,6 +6,84 @@ const GOOGLE_SHEETS_API_KEY = "AIzaSyDGzvIPk1cZ867bZdD58biqZdnPpqSQG4U";
 const SPREADSHEET_ID = "161GLwIcjtp0uJ0Dyb9v3ZnoPRf7FQ7nc8kMG-autv_k";
 const RANGE = "Sheet1!A1:G1000"; // Adjust based on your sheet structure
 
+// Dynamic sheet label mapping with colors
+export const sheetLabelMap: Record<string, { name: string; color: string; description: string }> = {
+  'Sheet1': { 
+    name: 'Global Intelligence', 
+    color: 'cyan',
+    description: 'Aggregated medical and pharma news updates'
+  },
+  'Regulatory_Intelligence_Tracker': { 
+    name: 'Regulatory Intelligence', 
+    color: 'teal',
+    description: 'Global submission tracking and compliance updates'
+  },
+  'Medical_Research': { 
+    name: 'Medical Research', 
+    color: 'green',
+    description: 'Recent peer-reviewed publications and discoveries'
+  },
+  'Clinical_Trials': { 
+    name: 'Clinical Trials', 
+    color: 'purple',
+    description: 'Ongoing or completed trial data and results'
+  },
+  'Public_Health': { 
+    name: 'Public Health & Forecasts', 
+    color: 'orange',
+    description: 'Epidemiological trends and outbreak insights'
+  },
+};
+
+const colorPalette = ['cyan', 'teal', 'green', 'purple', 'orange', 'indigo', 'pink'];
+let colorIndex = 0;
+
+// Dynamically detect all sheets and update mapping
+export const detectAndMapSheets = async (): Promise<void> => {
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=${GOOGLE_SHEETS_API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.warn('[QA] Failed to detect sheets:', response.statusText);
+      return;
+    }
+
+    const data = await response.json();
+    const sheets = data.sheets || [];
+    
+    console.log(`[QA] Detected Sheets → ${sheets.length}`);
+    
+    sheets.forEach((sheet: any) => {
+      const sheetName = sheet.properties.title;
+      
+      if (!sheetLabelMap[sheetName]) {
+        // Generate friendly label
+        const friendlyName = sheetName
+          .split('_')
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+        
+        // Assign color from palette
+        const color = colorPalette[colorIndex % colorPalette.length];
+        colorIndex++;
+        
+        sheetLabelMap[sheetName] = {
+          name: friendlyName,
+          color,
+          description: `Data from ${friendlyName}`
+        };
+        
+        console.log(`[QA] ${sheetName} → ${friendlyName} (${color})`);
+      } else {
+        console.log(`[QA] ${sheetName} → ${sheetLabelMap[sheetName].name} (${sheetLabelMap[sheetName].color})`);
+      }
+    });
+  } catch (error) {
+    console.error('[QA] Error detecting sheets:', error);
+  }
+};
+
 export const fetchSheetData = async (): Promise<IntelligenceData[]> => {
   try {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${GOOGLE_SHEETS_API_KEY}`;
@@ -81,15 +159,16 @@ export const fetchRegulatoryData = async (): Promise<any[]> => {
 
 // Fetch and merge data from all Google Sheets tabs
 export const fetchAllSheetsData = async (): Promise<any[]> => {
-  const sheets = [
-    { name: "Sheet1", range: "Sheet1!A:G" },
-    { name: "Regulatory_Intelligence_Tracker", range: "Regulatory_Intelligence_Tracker!A:U" },
-    { name: "Clinical_Trials", range: "Clinical_Trials!A:Z" },
-    { name: "Medical_Research", range: "Medical_Research!A:Z" },
-    { name: "Public_Health", range: "Public_Health!A:Z" },
-  ];
+  // First, detect and map all sheets dynamically
+  await detectAndMapSheets();
+  
+  const sheets = Object.keys(sheetLabelMap).map(sheetName => ({
+    name: sheetName,
+    range: `${sheetName}!A:Z`
+  }));
 
   const allData: any[] = [];
+  const startTime = performance.now();
 
   for (const sheet of sheets) {
     try {
@@ -131,6 +210,13 @@ export const fetchAllSheetsData = async (): Promise<any[]> => {
     const dateB = new Date(b.timestamp || 0).getTime();
     return dateB - dateA;
   });
+
+  const loadTime = performance.now() - startTime;
+  const now = new Date();
+  const timestamp = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  
+  console.log(`[QA] Data Load Complete → ${allData.length} records in ${loadTime.toFixed(2)}ms`);
+  console.log(`[QA] Last Updated → ${timestamp}`);
 
   return allData;
 };
