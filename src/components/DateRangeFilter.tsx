@@ -29,7 +29,7 @@ export const DateRangeFilter = ({
           <TooltipTrigger asChild>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors flex items-center gap-2"
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors inline-flex items-center gap-2 w-auto whitespace-nowrap"
             >
               Date Range <MoveHorizontal className="w-4 h-4" />
             </button>
