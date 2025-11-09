@@ -7,12 +7,6 @@ const SPREADSHEET_ID = "161GLwIcjtp0uJ0Dyb9v3ZnoPRf7FQ7nc8kMG-autv_k";
 const RANGE = "Sheet1!A1:G1000"; // Adjust based on your sheet structure
 
 export const fetchSheetData = async (): Promise<IntelligenceData[]> => {
-  // If API key is not set, return sample data for testing
-  if (GOOGLE_SHEETS_API_KEY === "YOUR_GOOGLE_SHEETS_API_KEY") {
-    console.warn("Google Sheets API key not configured. Using sample data.");
-    return getSampleData();
-  }
-
   try {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${GOOGLE_SHEETS_API_KEY}`;
     const response = await fetch(url);
