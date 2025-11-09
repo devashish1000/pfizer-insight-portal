@@ -26,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
 
 export interface IntelligenceData {
   timestamp: string;
@@ -45,11 +46,17 @@ interface IntelligenceTableProps {
 
 export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [impactFilter, setImpactFilter] = useState<string>("all");
-  const [regionFilter, setRegionFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("All Categories");
+  const [impactFilter, setImpactFilter] = useState<string>("All Impacts");
+  const [regionFilter, setRegionFilter] = useState<string>("All Regions");
   const [selectedRecord, setSelectedRecord] = useState<IntelligenceData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [startDate, setStartDate] = useState<Date | undefined>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30); // Default to last 30 days
+    return date;
+  });
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
   const categories = useMemo(() => {
     return Object.values(sheetLabelMap).map(mapping => ({
@@ -60,11 +67,11 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
   }, []);
   
   const impacts = useMemo(
-    () => ["all", ...Array.from(new Set(data.map((item) => item.impact).filter(Boolean)))],
+    () => ["All Impacts", ...Array.from(new Set(data.map((item) => item.impact).filter(Boolean)))],
     [data]
   );
   const regions = useMemo(
-    () => ["all", ...Array.from(new Set(data.map((item) => item.region).filter(Boolean)))],
+    () => ["All Regions", ...Array.from(new Set(data.map((item) => item.region).filter(Boolean)))],
     [data]
   );
 
@@ -79,15 +86,26 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
 
       const itemSourceLabel = sheetLabelMap[item._sourceSheet || '']?.name || item.category;
       const matchesCategory = 
-        categoryFilter === "all" || 
+        categoryFilter === "All Categories" || 
         itemSourceLabel === categoryFilter || 
         item.category === categoryFilter;
-      const matchesImpact = impactFilter === "all" || item.impact === impactFilter;
-      const matchesRegion = regionFilter === "all" || item.region === regionFilter;
+      const matchesImpact = impactFilter === "All Impacts" || item.impact === impactFilter;
+      const matchesRegion = regionFilter === "All Regions" || item.region === regionFilter;
+
+      // Date range filter
+      if (startDate || endDate) {
+        const recordDate = new Date(item.timestamp);
+        if (startDate && recordDate < startDate) return false;
+        if (endDate) {
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (recordDate > endOfDay) return false;
+        }
+      }
 
       return matchesSearch && matchesCategory && matchesImpact && matchesRegion;
     });
-  }, [data, search, categoryFilter, impactFilter, regionFilter]);
+  }, [data, search, categoryFilter, impactFilter, regionFilter, startDate, endDate]);
 
   const getImpactColor = (impact: string) => {
     const lower = impact?.toLowerCase() || "";
@@ -140,11 +158,11 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
           </div>
           <div className="flex items-center gap-2">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border">
+              <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border hover:bg-secondary/80 transition-colors">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border z-50">
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="All Categories">All Categories</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.label}
@@ -152,14 +170,14 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
                 ))}
               </SelectContent>
             </Select>
-            <TooltipProvider>
+            <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button className="text-cyan-glow/60 hover:text-cyan-glow transition-colors">
+                  <button className="text-cyan-glow/60 hover:text-cyan-glow transition-colors focus:outline-none">
                     <Info className="w-4 h-4" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs bg-glass/95 backdrop-blur-md border-cyan-glow/20">
+                <TooltipContent className="max-w-xs bg-glass/95 backdrop-blur-md border-cyan-glow/20" mobileAutoHide>
                   <div className="space-y-2 text-xs">
                     {categories.map((cat) => (
                       <div key={cat.value} className="flex flex-col">
@@ -173,29 +191,39 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
             </TooltipProvider>
           </div>
           <Select value={impactFilter} onValueChange={setImpactFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border">
+            <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border hover:bg-secondary/80 transition-colors">
               <SelectValue placeholder="Impact" />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border z-50">
               {impacts.map((imp) => (
                 <SelectItem key={imp} value={imp}>
-                  {imp === "all" ? "All Impacts" : imp}
+                  {imp}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={regionFilter} onValueChange={setRegionFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border">
+            <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border hover:bg-secondary/80 transition-colors">
               <SelectValue placeholder="Region" />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border z-50">
               {regions.map((reg) => (
                 <SelectItem key={reg} value={reg}>
-                  {reg === "all" ? "All Regions" : reg}
+                  {reg}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Date Range Filter */}
+        <div className="flex justify-end">
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
         </div>
 
         <div className="rounded-md border border-border overflow-hidden">

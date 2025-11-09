@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRefreshData } from "@/hooks/useRefreshData";
 import { toast } from "@/hooks/use-toast";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
 
 interface RegulatoryRecord {
   timestamp: string;
@@ -38,13 +39,19 @@ interface RegulatoryRecord {
 const Regulatory = () => {
   const [data, setData] = useState<RegulatoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAgency, setSelectedAgency] = useState<string>("All");
-  const [selectedStatus, setSelectedStatus] = useState<string>("All");
-  const [selectedRegion, setSelectedRegion] = useState<string>("All");
-  const [selectedType, setSelectedType] = useState<string>("All");
+  const [selectedAgency, setSelectedAgency] = useState<string>("All Agencies");
+  const [selectedStatus, setSelectedStatus] = useState<string>("All Statuses");
+  const [selectedRegion, setSelectedRegion] = useState<string>("All Regions");
+  const [selectedType, setSelectedType] = useState<string>("All Submission Types");
   const [selectedRecord, setSelectedRecord] = useState<RegulatoryRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [startDate, setStartDate] = useState<Date | undefined>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30); // Default to last 30 days
+    return date;
+  });
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
   const loadData = async () => {
     setLoading(true);
@@ -90,24 +97,43 @@ const Regulatory = () => {
   };
 
   // Extract unique values for filters
-  const agencies = useMemo(() => ["All", ...Array.from(new Set(data.map((d) => d.agency).filter(Boolean)))], [data]);
-  const statuses = useMemo(() => ["All", ...Array.from(new Set(data.map((d) => d.status).filter(Boolean)))], [data]);
-  const regions = useMemo(() => ["All", ...Array.from(new Set(data.map((d) => d.region).filter(Boolean)))], [data]);
+  const agencies = useMemo(() => ["All Agencies", ...Array.from(new Set(data.map((d) => d.agency).filter(Boolean)))], [data]);
+  const statuses = useMemo(() => ["All Statuses", ...Array.from(new Set(data.map((d) => d.status).filter(Boolean)))], [data]);
+  const regions = useMemo(() => ["All Regions", ...Array.from(new Set(data.map((d) => d.region).filter(Boolean)))], [data]);
   const types = useMemo(
-    () => ["All", ...Array.from(new Set(data.map((d) => d.submission_type).filter(Boolean)))],
+    () => ["All Submission Types", ...Array.from(new Set(data.map((d) => d.submission_type).filter(Boolean)))],
     [data],
   );
 
   // Filter data
   const filteredData = useMemo(() => {
     return data.filter((record) => {
-      if (selectedAgency !== "All" && record.agency !== selectedAgency) return false;
-      if (selectedStatus !== "All" && record.status !== selectedStatus) return false;
-      if (selectedRegion !== "All" && record.region !== selectedRegion) return false;
-      if (selectedType !== "All" && record.submission_type !== selectedType) return false;
+      // Agency filter
+      if (!selectedAgency.startsWith("All") && record.agency !== selectedAgency) return false;
+      
+      // Status filter
+      if (!selectedStatus.startsWith("All") && record.status !== selectedStatus) return false;
+      
+      // Region filter
+      if (!selectedRegion.startsWith("All") && record.region !== selectedRegion) return false;
+      
+      // Type filter
+      if (!selectedType.startsWith("All") && record.submission_type !== selectedType) return false;
+      
+      // Date range filter
+      if (startDate || endDate) {
+        const recordDate = new Date(record.timestamp);
+        if (startDate && recordDate < startDate) return false;
+        if (endDate) {
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (recordDate > endOfDay) return false;
+        }
+      }
+      
       return true;
     });
-  }, [data, selectedAgency, selectedStatus, selectedRegion, selectedType]);
+  }, [data, selectedAgency, selectedStatus, selectedRegion, selectedType, startDate, endDate]);
 
   // Calculate metrics
   const metrics = useMemo(() => {
@@ -285,7 +311,7 @@ const Regulatory = () => {
             <select
               value={selectedAgency}
               onChange={(e) => setSelectedAgency(e.target.value)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40"
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors"
             >
               {agencies.map((agency) => (
                 <option key={agency} value={agency}>
@@ -297,7 +323,7 @@ const Regulatory = () => {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40"
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors"
             >
               {statuses.map((status) => (
                 <option key={status} value={status}>
@@ -309,7 +335,7 @@ const Regulatory = () => {
             <select
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40"
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors"
             >
               {regions.map((region) => (
                 <option key={region} value={region}>
@@ -321,7 +347,7 @@ const Regulatory = () => {
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40"
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition-colors"
             >
               {types.map((type) => (
                 <option key={type} value={type}>
@@ -330,9 +356,18 @@ const Regulatory = () => {
               ))}
             </select>
 
+            <div className="flex-grow" />
+            
+            <DateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+            />
+
             <Button
               onClick={exportToCSV}
-              className="ml-auto h-9 bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20 hover:bg-cyan-glow/20"
+              className="h-9 bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20 hover:bg-cyan-glow/20"
             >
               <Download className="w-4 h-4 mr-2" />
               Export CSV
