@@ -37,6 +37,48 @@ export const fetchSheetData = async (): Promise<IntelligenceData[]> => {
   }
 };
 
+// Fetch data for Regulatory Intelligence Tracker
+export const fetchRegulatoryData = async (): Promise<any[]> => {
+  const RANGE = "Regulatory_Intelligence_Tracker!A:U"; // Adjust range if you add more columns
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${GOOGLE_SHEETS_API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch data: ${response.statusText}`);
+
+    const data = await response.json();
+    const rows = data.values || [];
+    const dataRows = rows.slice(1); // skip headers
+
+    return dataRows.map((row: string[]) => ({
+      timestamp: row[0] || "",
+      agency: row[1] || "",
+      region: row[2] || "",
+      submission_id: row[3] || "",
+      submission_type: row[4] || "",
+      compound_name: row[5] || "",
+      generic_name: row[6] || "",
+      therapeutic_area: row[7] || "",
+      indication: row[8] || "",
+      status: row[9] || "",
+      priority_designation: row[10] || "",
+      submission_date: row[11] || "",
+      target_decision_date: row[12] || "",
+      approval_date: row[13] || "",
+      review_cycle: row[14] || "",
+      key_issues: row[15] || "",
+      risk_level: row[16] || "",
+      impact: row[17] || "",
+      source: row[18] || "",
+      summary: row[19] || "",
+      last_updated_by: row[20] || "",
+    }));
+  } catch (error) {
+    console.error("Error fetching Regulatory data:", error);
+    return [];
+  }
+};
+
 // Sample data for testing
 const getSampleData = (): IntelligenceData[] => [
   {
