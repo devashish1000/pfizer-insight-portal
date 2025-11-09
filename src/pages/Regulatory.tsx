@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { GlassCard } from "@/components/GlassCard";
-import { Scale, TrendingUp, AlertCircle, Globe2, Download } from "lucide-react";
+import { Scale, TrendingUp, AlertCircle, Globe2, Download, X } from "lucide-react";
 import { fetchRegulatoryData } from "@/lib/googleSheets";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface RegulatoryRecord {
   timestamp: string;
@@ -39,6 +40,8 @@ const Regulatory = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("All");
   const [selectedRegion, setSelectedRegion] = useState<string>("All");
   const [selectedType, setSelectedType] = useState<string>("All");
+  const [selectedRecord, setSelectedRecord] = useState<RegulatoryRecord | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -335,7 +338,11 @@ const Regulatory = () => {
                   {filteredData.map((record, index) => (
                     <TableRow
                       key={index}
-                      className="border-cyan-glow/10 hover:bg-cyan-glow/5 transition-all duration-300"
+                      className="border-cyan-glow/10 hover:bg-cyan-glow/5 transition-all duration-300 cursor-pointer"
+                      onClick={() => {
+                        setSelectedRecord(record);
+                        setIsModalOpen(true);
+                      }}
                     >
                       <TableCell className="font-medium text-text-off-white">{record.submission_id}</TableCell>
                       <TableCell>
@@ -366,6 +373,165 @@ const Regulatory = () => {
             </p>
           </div>
         </GlassCard>
+
+        {/* Detail Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="glassmorphism border-cyan-glow/20 max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-cyan-glow flex items-center justify-between">
+                Submission Details
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-text-light-gray hover:text-cyan-glow transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedRecord && (
+              <div className="space-y-6 mt-4">
+                {/* Submission Overview */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-text-off-white border-b border-cyan-glow/20 pb-2">
+                    Submission Overview
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Submission ID</p>
+                      <p className="text-sm text-text-off-white font-medium">{selectedRecord.submission_id}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Submission Type</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.submission_type}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Agency</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.agency}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Region</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.region}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Status</p>
+                      <Badge className={getStatusColor(selectedRecord.status)}>{selectedRecord.status}</Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Risk Level</p>
+                      <Badge className={getRiskColor(selectedRecord.risk_level)}>{selectedRecord.risk_level}</Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compound Information */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-text-off-white border-b border-cyan-glow/20 pb-2">
+                    Compound Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Compound Name</p>
+                      <p className="text-sm text-text-off-white font-medium">{selectedRecord.compound_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Generic Name</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.generic_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Therapeutic Area</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.therapeutic_area}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Indication</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.indication}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Priority Designation</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.priority_designation || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-text-off-white border-b border-cyan-glow/20 pb-2">
+                    Timeline
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Submission Date</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.submission_date || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Target Decision Date</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.target_decision_date || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Approval Date</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.approval_date || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Review Cycle</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.review_cycle || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Key Issues & Impact */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-text-off-white border-b border-cyan-glow/20 pb-2">
+                    Key Issues & Impact
+                  </h3>
+                  <div>
+                    <p className="text-xs text-text-light-gray mb-1">Key Issues</p>
+                    <p className="text-sm text-text-off-white">{selectedRecord.key_issues || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-light-gray mb-1">Impact</p>
+                    <p className="text-sm text-text-off-white">{selectedRecord.impact || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-light-gray mb-1">Summary</p>
+                    <p className="text-sm text-text-off-white">{selectedRecord.summary || "—"}</p>
+                  </div>
+                </div>
+
+                {/* Source & Updates */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-text-off-white border-b border-cyan-glow/20 pb-2">
+                    Source & Updates
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Source</p>
+                      {selectedRecord.source ? (
+                        <a 
+                          href={selectedRecord.source} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-cyan-glow hover:underline"
+                        >
+                          View Source →
+                        </a>
+                      ) : (
+                        <p className="text-sm text-text-off-white">—</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-gray mb-1">Last Updated By</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.last_updated_by || "—"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-text-light-gray mb-1">Timestamp</p>
+                      <p className="text-sm text-text-off-white">{selectedRecord.timestamp || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

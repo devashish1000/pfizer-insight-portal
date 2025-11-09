@@ -17,18 +17,20 @@ export const DashboardHeader = ({
 }: DashboardHeaderProps) => {
   return (
     <header className="frosted-glass border-b border-cyan-glow/10 px-6 py-3 flex shrink-0 items-center justify-between whitespace-nowrap">
-      <div className="flex items-center gap-8">
-        <div className="flex items-center gap-4 text-text-off-white">
-          {Icon && (
-            <div className="text-cyan-glow">
-              <Icon className="w-9 h-9" />
-            </div>
-          )}
+      <div className="flex items-center gap-4 text-text-off-white">
+        {Icon && (
+          <div className="text-cyan-glow">
+            <Icon className="w-9 h-9" />
+          </div>
+        )}
+        <div>
           <h2 className="text-lg font-bold leading-tight tracking-[-0.015em] text-text-off-white">
             {title}
           </h2>
+          {subtitle && (
+            <p className="text-sm text-text-light-gray mt-1">{subtitle}</p>
+          )}
         </div>
-        <div className="text-sm text-text-light-gray">{subtitle}</div>
       </div>
       
       <div className="flex flex-1 items-center justify-end gap-4">

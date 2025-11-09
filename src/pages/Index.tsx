@@ -2,20 +2,12 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { FilterBar } from "@/components/FilterBar";
 import { MetricCards } from "@/components/MetricCards";
 import { IntelligenceTable, IntelligenceData } from "@/components/IntelligenceTable";
 import { fetchSheetData } from "@/lib/googleSheets";
 import { LayoutDashboard, RefreshCw } from "lucide-react";
 
 const Index = () => {
-  const filters = [
-    { label: "Category" },
-    { label: "Impact" },
-    { label: "Region" },
-    { label: "Source" },
-  ];
-
   const {
     data: intelligenceData = [],
     isLoading,
@@ -49,7 +41,11 @@ const Index = () => {
     return (
       <DashboardLayout>
         <div className="min-h-screen flex flex-col">
-          <DashboardHeader icon={LayoutDashboard} />
+          <DashboardHeader 
+            title="Pfizer Intelligence Hub"
+            subtitle="Real-time global medical and regulatory updates"
+            icon={LayoutDashboard} 
+          />
           <div className="flex items-center justify-center h-64">
             <RefreshCw className="w-8 h-8 text-cyan-glow animate-spin" />
           </div>
@@ -61,8 +57,11 @@ const Index = () => {
   return (
     <DashboardLayout>
       <div className="min-h-screen flex flex-col">
-        <DashboardHeader icon={LayoutDashboard} />
-        <FilterBar filters={filters} />
+        <DashboardHeader 
+          title="Pfizer Intelligence Hub"
+          subtitle="Real-time global medical and regulatory updates"
+          icon={LayoutDashboard} 
+        />
         <div className="container mx-auto px-6 py-8">
           <MetricCards
             totalToday={metrics.totalToday}
