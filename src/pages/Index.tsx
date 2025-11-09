@@ -8,33 +8,37 @@ import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
 
 const Index = () => {
-  const { data: intelligenceData = [], isLoading, error, refetch } = useQuery<IntelligenceData[]>({
+  const {
+    data: intelligenceData = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<IntelligenceData[]>({
     queryKey: ["intelligence-data"],
     queryFn: fetchSheetData,
     refetchInterval: 2 * 60 * 60 * 1000, // Auto-refresh every 2 hours
     staleTime: 2 * 60 * 60 * 1000,
   });
 
+  // Auto-refresh the whole dashboard every 10 minutes
   useEffect(() => {
-    if (error) {
-      toast.error("Failed to load data. Using sample data.");
-    }
-  }, [error]);
+    const interval = setInterval(() => window.location.reload(), 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const metrics = useMemo(() => {
     const today = new Date().toDateString();
-    const totalToday = intelligenceData.filter(
-      (item) => new Date(item.timestamp).toDateString() === today
-    ).length;
+    const totalToday = intelligenceData.filter((item) => new Date(item.timestamp).toDateString() === today).length;
 
-    const highImpact = intelligenceData.filter((item) =>
-      item.impact.toLowerCase().includes("high")
-    ).length;
+    const highImpact = intelligenceData.filter((item) => item.impact.toLowerCase().includes("high")).length;
 
-    const categoryBreakdown = intelligenceData.reduce((acc, item) => {
-      acc[item.category] = (acc[item.category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const categoryBreakdown = intelligenceData.reduce(
+      (acc, item) => {
+        acc[item.category] = (acc[item.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return { totalToday, highImpact, categoryBreakdown };
   }, [intelligenceData]);
