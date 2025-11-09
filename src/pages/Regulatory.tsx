@@ -216,13 +216,20 @@ const Regulatory = () => {
       ),
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `regulatory_intelligence_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `Regulatory_Intelligence_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "✅ Exported filtered data to CSV",
+      description: `${filteredData.length} records exported`,
+      duration: 3000,
+      className: "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20",
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -251,60 +258,10 @@ const Regulatory = () => {
         icon={Scale}
         onRefresh={handleManualRefresh}
         isRefreshing={isManualRefreshing}
+        onExport={exportToCSV}
       />
 
-      <div className="p-6 space-y-6">
-        {/* Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <GlassCard className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-text-light-gray text-sm mb-1">Active Submissions</p>
-                <p className="text-3xl font-bold text-cyan-glow">{metrics.activeSubmissions}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-cyan-glow/10 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-cyan-glow" />
-              </div>
-            </div>
-          </GlassCard>
-
-          <GlassCard className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-text-light-gray text-sm mb-1">Pending Reviews</p>
-                <p className="text-3xl font-bold text-warning">{metrics.pendingReviews}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
-                <Scale className="w-6 h-6 text-warning" />
-              </div>
-            </div>
-          </GlassCard>
-
-          <GlassCard className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-text-light-gray text-sm mb-1">Action Items</p>
-                <p className="text-3xl font-bold text-destructive">{metrics.actionItems}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-destructive" />
-              </div>
-            </div>
-          </GlassCard>
-
-          <GlassCard className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-text-light-gray text-sm mb-1">Global Markets</p>
-                <p className="text-3xl font-bold text-success">{metrics.globalMarkets}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
-                <Globe2 className="w-6 h-6 text-success" />
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-
+      <div className="container mx-auto px-6 pt-4 pb-2 md:pt-6">
         {/* Filters */}
         <GlassCard className="mb-6 p-4">
           <div className="flex flex-wrap gap-3 items-center">
@@ -364,16 +321,60 @@ const Regulatory = () => {
               onStartDateChange={setStartDate}
               onEndDateChange={setEndDate}
             />
-
-            <Button
-              onClick={exportToCSV}
-              className="h-9 bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20 hover:bg-cyan-glow/20"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
           </div>
         </GlassCard>
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-light-gray text-sm mb-1">Active Submissions</p>
+                <p className="text-3xl font-bold text-cyan-glow">{metrics.activeSubmissions}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-cyan-glow/10 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-cyan-glow" />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-light-gray text-sm mb-1">Pending Reviews</p>
+                <p className="text-3xl font-bold text-warning">{metrics.pendingReviews}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
+                <Scale className="w-6 h-6 text-warning" />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-light-gray text-sm mb-1">Action Items</p>
+                <p className="text-3xl font-bold text-destructive">{metrics.actionItems}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-destructive" />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-light-gray text-sm mb-1">Global Markets</p>
+                <p className="text-3xl font-bold text-success">{metrics.globalMarkets}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
+                <Globe2 className="w-6 h-6 text-success" />
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+
 
         {/* Data Table */}
         <GlassCard className="overflow-hidden">

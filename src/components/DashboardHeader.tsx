@@ -9,6 +9,7 @@ interface DashboardHeaderProps {
   showExport?: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onExport?: () => void;
 }
 
 export const DashboardHeader = ({ 
@@ -19,6 +20,7 @@ export const DashboardHeader = ({
   showExport = true,
   onRefresh,
   isRefreshing = false,
+  onExport,
 }: DashboardHeaderProps) => {
   return (
     <header className="frosted-glass border-b border-cyan-glow/10 px-6 py-3 flex shrink-0 items-center justify-between whitespace-nowrap">
@@ -62,8 +64,11 @@ export const DashboardHeader = ({
           </button>
         )}
 
-        {showExport && (
-          <button className="flex h-10 min-w-0 items-center justify-center gap-2 overflow-hidden rounded-lg border border-cyan-glow/30 bg-cyan-glow/10 px-4 text-sm font-medium leading-normal text-cyan-glow transition-all duration-300 hover:bg-cyan-glow/20 hover:shadow-glow-cyan">
+        {showExport && onExport && (
+          <button 
+            onClick={onExport}
+            className="flex h-9 min-w-0 items-center justify-center gap-2 overflow-hidden rounded-xl border border-cyan-glow/20 bg-cyan-glow/10 px-4 text-sm font-semibold leading-normal text-cyan-glow transition-all duration-300 hover:bg-cyan-glow/20 hover:shadow-glow-cyan"
+          >
             <Download className="w-4 h-4" />
             <span>Export Data</span>
           </button>

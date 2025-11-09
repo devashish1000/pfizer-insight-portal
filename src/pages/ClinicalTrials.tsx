@@ -5,6 +5,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Beaker, CheckCircle2, HourglassIcon, Calendar, Flag, MoreVertical } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const ClinicalTrials = () => {
   // Dummy state for refresh - in production this would fetch actual data
@@ -107,6 +108,38 @@ const ClinicalTrials = () => {
     },
   ];
 
+  const handleExport = () => {
+    const headers = ["ID", "Title", "Date", "Status"];
+    const csvContent = [
+      headers.join(","),
+      ...milestones.map((milestone) =>
+        [
+          milestone.id,
+          milestone.title,
+          milestone.date,
+          milestone.status,
+        ]
+          .map((field) => `"${(field || "").toString().replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Clinical_Trials_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "✅ Exported filtered data to CSV",
+      description: `${milestones.length} milestones exported`,
+      duration: 3000,
+      className: "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20",
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="min-h-screen flex flex-col">
@@ -115,6 +148,7 @@ const ClinicalTrials = () => {
           subtitle="Last updated: 14:32 EST"
           icon={Beaker}
           onRefresh={handleRefresh}
+          onExport={handleExport}
         />
         
         <FilterBar filters={filters} />

@@ -4,6 +4,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { GlassCard } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
 import { Globe2, TrendingUp, AlertTriangle, Activity } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const PublicHealth = () => {
   // Dummy state for refresh - in production this would fetch actual data
@@ -87,6 +88,42 @@ const PublicHealth = () => {
     }
   };
 
+  const handleExport = () => {
+    const headers = ["ID", "Title", "Region", "Severity", "Trend", "Confidence", "Timeframe", "Summary"];
+    const csvContent = [
+      headers.join(","),
+      ...forecasts.map((forecast) =>
+        [
+          forecast.id,
+          forecast.title,
+          forecast.region,
+          forecast.severity,
+          forecast.trend,
+          forecast.confidence,
+          forecast.timeframe,
+          forecast.summary,
+        ]
+          .map((field) => `"${(field || "").toString().replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Public_Health_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "✅ Exported filtered data to CSV",
+      description: `${forecasts.length} forecasts exported`,
+      duration: 3000,
+      className: "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20",
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="min-h-screen flex flex-col">
@@ -95,6 +132,7 @@ const PublicHealth = () => {
           subtitle="Epidemiological monitoring and predictive health intelligence"
           icon={Globe2}
           onRefresh={handleRefresh}
+          onExport={handleExport}
         />
         
         <FilterBar filters={filters} />

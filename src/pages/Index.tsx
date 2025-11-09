@@ -7,6 +7,7 @@ import { IntelligenceTable, IntelligenceData } from "@/components/IntelligenceTa
 import { fetchAllSheetsData } from "@/lib/googleSheets";
 import { LayoutDashboard, RefreshCw } from "lucide-react";
 import { useRefreshData } from "@/hooks/useRefreshData";
+import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const {
@@ -58,6 +59,40 @@ const Index = () => {
     return { totalToday, highImpact, categoryBreakdown };
   }, [intelligenceData]);
 
+  const handleExport = () => {
+    const headers = ["Timestamp", "Category", "Impact", "Region", "Source", "Summary"];
+    const csvContent = [
+      headers.join(","),
+      ...intelligenceData.map((item) =>
+        [
+          item.timestamp,
+          item.category || item._sourceSheet || "",
+          item.impact || "",
+          item.region || "",
+          item.source || "",
+          item.summary || "",
+        ]
+          .map((field) => `"${(field || "").toString().replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Dashboard_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "✅ Exported filtered data to CSV",
+      description: `${intelligenceData.length} records exported`,
+      duration: 3000,
+      className: "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20",
+    });
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -68,6 +103,7 @@ const Index = () => {
             icon={LayoutDashboard}
             onRefresh={refreshData}
             isRefreshing={isRefreshing}
+            onExport={handleExport}
           />
           <div className="flex items-center justify-center h-64">
             <RefreshCw className="w-8 h-8 text-cyan-glow animate-spin" />
@@ -86,6 +122,7 @@ const Index = () => {
             icon={LayoutDashboard}
             onRefresh={refreshData}
             isRefreshing={isRefreshing}
+            onExport={handleExport}
           />
         <div className="container mx-auto px-6 py-8">
           <MetricCards

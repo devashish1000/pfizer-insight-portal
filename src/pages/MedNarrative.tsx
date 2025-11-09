@@ -4,6 +4,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { GlassCard } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
 import { Microscope, BookOpen, TrendingUp, MessageSquare, Eye } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const MedNarrative = () => {
   // Dummy state for refresh - in production this would fetch actual data
@@ -77,6 +78,44 @@ const MedNarrative = () => {
     }
   };
 
+  const handleExport = () => {
+    const headers = ["ID", "Title", "Source", "Date", "Sentiment", "Reach", "Impact", "Summary", "Mentions", "Engagement"];
+    const csvContent = [
+      headers.join(","),
+      ...narratives.map((narrative) =>
+        [
+          narrative.id,
+          narrative.title,
+          narrative.source,
+          narrative.date,
+          narrative.sentiment,
+          narrative.reach,
+          narrative.impact,
+          narrative.summary,
+          narrative.mentions,
+          narrative.engagement,
+        ]
+          .map((field) => `"${(field || "").toString().replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Medical_Research_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "✅ Exported filtered data to CSV",
+      description: `${narratives.length} records exported`,
+      duration: 3000,
+      className: "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20",
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="min-h-screen flex flex-col">
@@ -85,6 +124,7 @@ const MedNarrative = () => {
           subtitle="Medical communication monitoring and sentiment analysis"
           icon={Microscope}
           onRefresh={handleRefresh}
+          onExport={handleExport}
         />
         
         <FilterBar filters={filters} />
