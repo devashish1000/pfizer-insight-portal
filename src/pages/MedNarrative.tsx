@@ -1,10 +1,18 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { FilterBar } from "@/components/FilterBar";
 import { GlassCard } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, TrendingUp, MessageSquare, Eye } from "lucide-react";
+import { Microscope, BookOpen, TrendingUp, MessageSquare, Eye } from "lucide-react";
 
 const MedNarrative = () => {
+  const filters = [
+    { label: "Sentiment" },
+    { label: "Source Type" },
+    { label: "Impact Level" },
+    { label: "Date Range" },
+  ];
+
   const narratives = [
     {
       id: "MN-2024-089",
@@ -45,9 +53,9 @@ const MedNarrative = () => {
   ];
 
   const metrics = [
-    { label: "Active Narratives", value: "67", icon: BookOpen, color: "text-primary" },
+    { label: "Active Narratives", value: "67", icon: BookOpen, color: "text-cyan-glow" },
     { label: "Positive Sentiment", value: "78%", icon: TrendingUp, color: "text-success" },
-    { label: "Media Mentions", value: "1,247", icon: MessageSquare, color: "text-primary" },
+    { label: "Media Mentions", value: "1,247", icon: MessageSquare, color: "text-cyan-glow" },
     { label: "Total Reach", value: "2.4M", icon: Eye, color: "text-warning" },
   ];
 
@@ -56,21 +64,24 @@ const MedNarrative = () => {
       case "positive":
         return "bg-success/10 text-success border-success/30";
       case "neutral":
-        return "bg-muted/30 text-muted-foreground border-border/30";
+        return "bg-text-light-gray/10 text-text-light-gray border-text-light-gray/30";
       case "negative":
         return "bg-destructive/10 text-destructive border-destructive/30";
       default:
-        return "bg-muted/30 text-muted-foreground border-border/30";
+        return "bg-text-light-gray/10 text-text-light-gray border-text-light-gray/30";
     }
   };
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col">
         <DashboardHeader 
-          title="MedNarrative Insights" 
+          title="Medical Research Insights" 
           subtitle="Medical communication monitoring and sentiment analysis"
+          icon={Microscope}
         />
+        
+        <FilterBar filters={filters} />
         
         <div className="container mx-auto px-6 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -78,8 +89,8 @@ const MedNarrative = () => {
               <GlassCard key={metric.label}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">{metric.label}</p>
-                    <p className="text-3xl font-bold text-foreground">{metric.value}</p>
+                    <p className="text-sm text-text-light-gray mb-1">{metric.label}</p>
+                    <p className="text-3xl font-bold text-text-off-white">{metric.value}</p>
                   </div>
                   <metric.icon className={`w-10 h-10 ${metric.color}`} />
                 </div>
@@ -88,44 +99,44 @@ const MedNarrative = () => {
           </div>
 
           <GlassCard>
-            <h2 className="text-xl font-semibold text-foreground mb-6">Recent Medical Narratives</h2>
+            <h2 className="text-xl font-semibold text-text-off-white mb-6">Recent Medical Narratives</h2>
             <div className="space-y-4">
               {narratives.map((narrative) => (
                 <div
                   key={narrative.id}
-                  className="p-5 rounded-lg bg-background/30 border border-border/30 hover:border-primary/30 transition-all duration-300"
+                  className="p-5 rounded-lg bg-cyan-glow/5 border border-cyan-glow/10 hover:border-cyan-glow/30 transition-all duration-300"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-foreground">{narrative.title}</h3>
+                        <h3 className="text-lg font-semibold text-text-off-white">{narrative.title}</h3>
                         <Badge variant="outline" className={getSentimentColor(narrative.sentiment)}>
                           {narrative.sentiment}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">
+                      <p className="text-sm text-text-light-gray mb-3">
                         <span className="font-medium">{narrative.source}</span> • {narrative.date}
                       </p>
-                      <p className="text-sm text-foreground/80 mb-4">{narrative.summary}</p>
+                      <p className="text-sm text-text-off-white/80 mb-4">{narrative.summary}</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-border/30">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-cyan-glow/10">
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Reach</p>
-                      <p className="text-sm font-medium text-foreground">{narrative.reach}</p>
+                      <p className="text-xs text-text-light-gray mb-1">Reach</p>
+                      <p className="text-sm font-medium text-text-off-white">{narrative.reach}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Impact</p>
-                      <p className="text-sm font-medium text-foreground">{narrative.impact}</p>
+                      <p className="text-xs text-text-light-gray mb-1">Impact</p>
+                      <p className="text-sm font-medium text-text-off-white">{narrative.impact}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Mentions</p>
-                      <p className="text-sm font-medium text-foreground">{narrative.mentions}</p>
+                      <p className="text-xs text-text-light-gray mb-1">Mentions</p>
+                      <p className="text-sm font-medium text-text-off-white">{narrative.mentions}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Engagement</p>
-                      <p className="text-sm font-medium text-foreground">{narrative.engagement}</p>
+                      <p className="text-xs text-text-light-gray mb-1">Engagement</p>
+                      <p className="text-sm font-medium text-text-off-white">{narrative.engagement}</p>
                     </div>
                   </div>
                 </div>

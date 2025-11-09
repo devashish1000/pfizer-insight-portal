@@ -1,54 +1,61 @@
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, FileText, BookOpen, Beaker, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Scale, Microscope, Beaker, Globe2, Settings, HelpCircle } from "lucide-react";
 
 export const Sidebar = () => {
   const navItems = [
-    { to: "/", icon: LayoutDashboard, label: "Global Intelligence" },
-    { to: "/clinical-trials", icon: Beaker, label: "Clinical Trials Lens" },
-    { to: "/regulatory", icon: FileText, label: "Regulatory Tracker" },
-    { to: "/mednarrative", icon: BookOpen, label: "MedNarrative Insights" },
-    { to: "/public-health", icon: TrendingUp, label: "Public Health" },
+    { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/regulatory", icon: Scale, label: "Regulatory Intelligence" },
+    { to: "/mednarrative", icon: Microscope, label: "Medical Research" },
+    { to: "/clinical-trials", icon: Beaker, label: "Clinical Trials" },
+    { to: "/public-health", icon: Globe2, label: "Public Health & Forecasts" },
+  ];
+
+  const bottomNavItems = [
+    { to: "/settings", icon: Settings, label: "Settings" },
+    { to: "/help", icon: HelpCircle, label: "Help" },
   ];
 
   return (
-    <aside className="w-64 min-h-screen bg-card border-r border-border/50 flex flex-col">
-      <div className="p-6 border-b border-border/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-            <span className="text-primary font-bold text-xl">P</span>
+    <aside className="w-64 min-h-screen frosted-glass border-r border-cyan-glow/10 flex flex-col p-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3 px-3 py-2">
+          <div className="w-10 h-10 rounded-lg bg-cyan-glow/20 flex items-center justify-center">
+            <span className="text-cyan-glow font-bold text-xl">P</span>
           </div>
-          <div>
-            <h2 className="font-semibold text-foreground">Pfizer</h2>
-            <p className="text-xs text-muted-foreground">Intelligence Hub</p>
+          <div className="flex flex-col">
+            <h1 className="text-base font-bold leading-normal text-text-off-white">Pfizer</h1>
+            <p className="text-sm font-normal leading-normal text-text-light-gray">Intelligence Hub</p>
           </div>
         </div>
+        
+        <nav className="mt-4 flex flex-col gap-2">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === "/"}
+              className="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-text-light-gray transition-all duration-300 hover:bg-cyan-glow/10 hover:text-cyan-glow"
+              activeClassName="relative bg-cyan-glow/10 text-cyan-glow shadow-glow-cyan active-glow font-bold"
+            >
+              <item.icon className="w-5 h-5 transition-colors group-hover:text-cyan-glow" />
+              <p className="text-sm font-medium leading-normal">{item.label}</p>
+            </NavLink>
+          ))}
+        </nav>
       </div>
-      
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => (
+
+      <div className="mt-auto flex flex-col gap-1">
+        {bottomNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === "/"}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-300"
-            activeClassName="bg-primary/10 text-primary font-medium border-l-2 border-primary"
+            className="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-text-light-gray transition-all duration-300 hover:bg-cyan-glow/10 hover:text-cyan-glow"
+            activeClassName="bg-cyan-glow/10 text-cyan-glow"
           >
-            <item.icon className="w-5 h-5" />
-            <span className="text-sm">{item.label}</span>
+            <item.icon className="w-5 h-5 transition-colors group-hover:text-cyan-glow" />
+            <p className="text-sm font-medium leading-normal">{item.label}</p>
           </NavLink>
         ))}
-      </nav>
-
-      <div className="p-4 border-t border-border/50">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="text-primary text-xs font-medium">AD</span>
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-medium text-foreground">Admin User</p>
-            <p className="text-xs text-muted-foreground">admin@pfizer.com</p>
-          </div>
-        </div>
       </div>
     </aside>
   );

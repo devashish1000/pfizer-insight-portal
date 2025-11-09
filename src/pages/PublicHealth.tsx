@@ -1,10 +1,18 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { FilterBar } from "@/components/FilterBar";
 import { GlassCard } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, AlertTriangle, Activity, Globe } from "lucide-react";
+import { Globe2, TrendingUp, AlertTriangle, Activity } from "lucide-react";
 
 const PublicHealth = () => {
+  const filters = [
+    { label: "Region" },
+    { label: "Severity" },
+    { label: "Timeframe" },
+    { label: "Confidence" },
+  ];
+
   const forecasts = [
     {
       id: "PH-2024-034",
@@ -42,9 +50,9 @@ const PublicHealth = () => {
   ];
 
   const metrics = [
-    { label: "Active Forecasts", value: "24", icon: TrendingUp, color: "text-primary" },
+    { label: "Active Forecasts", value: "24", icon: TrendingUp, color: "text-cyan-glow" },
     { label: "High Priority Alerts", value: "6", icon: AlertTriangle, color: "text-warning" },
-    { label: "Monitored Regions", value: "127", icon: Globe, color: "text-primary" },
+    { label: "Monitored Regions", value: "127", icon: Globe2, color: "text-cyan-glow" },
     { label: "Data Sources", value: "340", icon: Activity, color: "text-success" },
   ];
 
@@ -76,11 +84,14 @@ const PublicHealth = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col">
         <DashboardHeader 
           title="Public Health & Forecasts" 
           subtitle="Epidemiological monitoring and predictive health intelligence"
+          icon={Globe2}
         />
+        
+        <FilterBar filters={filters} />
         
         <div className="container mx-auto px-6 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -88,8 +99,8 @@ const PublicHealth = () => {
               <GlassCard key={metric.label}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">{metric.label}</p>
-                    <p className="text-3xl font-bold text-foreground">{metric.value}</p>
+                    <p className="text-sm text-text-light-gray mb-1">{metric.label}</p>
+                    <p className="text-3xl font-bold text-text-off-white">{metric.value}</p>
                   </div>
                   <metric.icon className={`w-10 h-10 ${metric.color}`} />
                 </div>
@@ -98,12 +109,12 @@ const PublicHealth = () => {
           </div>
 
           <GlassCard>
-            <h2 className="text-xl font-semibold text-foreground mb-6">Active Public Health Forecasts</h2>
+            <h2 className="text-xl font-semibold text-text-off-white mb-6">Active Public Health Forecasts</h2>
             <div className="space-y-4">
               {forecasts.map((forecast) => (
                 <div
                   key={forecast.id}
-                  className="p-5 rounded-lg bg-background/30 border border-border/30 hover:border-primary/30 transition-all duration-300"
+                  className="p-5 rounded-lg bg-cyan-glow/5 border border-cyan-glow/10 hover:border-cyan-glow/30 transition-all duration-300"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
