@@ -1,6 +1,14 @@
 import { Activity } from "lucide-react";
 
-export const DashboardHeader = () => {
+interface DashboardHeaderProps {
+  title?: string;
+  subtitle?: string;
+}
+
+export const DashboardHeader = ({ 
+  title = "Pfizer Intelligence Hub", 
+  subtitle = "Real-time global medical and regulatory updates" 
+}: DashboardHeaderProps) => {
   return (
     <header className="border-b border-border bg-card">
       <div className="container mx-auto px-6 py-4">
@@ -10,10 +18,10 @@ export const DashboardHeader = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Pfizer Intelligence Hub
+              {title}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Real-time global medical and regulatory updates
+              {subtitle}
             </p>
           </div>
         </div>

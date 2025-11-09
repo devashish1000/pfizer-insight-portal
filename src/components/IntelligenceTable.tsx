@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { GlassCard } from "@/components/GlassCard";
 
 export interface IntelligenceData {
   timestamp: string;
@@ -77,8 +77,8 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
   };
 
   return (
-    <Card className="border-border bg-card">
-      <div className="p-6 space-y-4">
+    <GlassCard>
+      <div className="space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -186,6 +186,6 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
           </span>
         </div>
       </div>
-    </Card>
+    </GlassCard>
   );
 };

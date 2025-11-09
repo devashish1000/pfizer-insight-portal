@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { MetricCards } from "@/components/MetricCards";
 import { IntelligenceTable, IntelligenceData } from "@/components/IntelligenceTable";
@@ -45,29 +46,33 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <DashboardHeader />
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex items-center justify-center h-64">
-            <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+      <DashboardLayout>
+        <div className="min-h-screen">
+          <DashboardHeader />
+          <div className="container mx-auto px-6 py-8">
+            <div className="flex items-center justify-center h-64">
+              <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+            </div>
           </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader />
-      <div className="container mx-auto px-6 py-8">
-        <MetricCards
-          totalToday={metrics.totalToday}
-          highImpact={metrics.highImpact}
-          categoryBreakdown={metrics.categoryBreakdown}
-        />
-        <IntelligenceTable data={intelligenceData} />
+    <DashboardLayout>
+      <div className="min-h-screen">
+        <DashboardHeader />
+        <div className="container mx-auto px-6 py-8">
+          <MetricCards
+            totalToday={metrics.totalToday}
+            highImpact={metrics.highImpact}
+            categoryBreakdown={metrics.categoryBreakdown}
+          />
+          <IntelligenceTable data={intelligenceData} />
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
