@@ -1,0 +1,216 @@
+import { useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Cell,
+  ResponsiveContainer,
+} from "recharts";
+
+interface TrialData {
+  trial_id: string;
+  drug_name: string;
+  phase: string;
+  status: string;
+  start_date: string;
+  expected_end_date: string;
+  completion_percent: string;
+  therapeutic_area: string;
+}
+
+interface TrialsGanttChartProps {
+  data: TrialData[];
+  maxTrials?: number;
+}
+
+interface GanttDataPoint {
+  trialName: string;
+  phase: string;
+  status: string;
+  startOffset: number;
+  duration: number;
+  completionPercent: number;
+  startDate: string;
+  endDate: string;
+  therapeuticArea: string;
+}
+
+const PHASE_COLORS = {
+  "Phase I": "#3b82f6",
+  "Phase II": "#8b5cf6",
+  "Phase III": "#ec4899",
+  "Phase IV": "#f59e0b",
+  "Preclinical": "#6366f1",
+  "default": "#06b6d4",
+};
+
+const STATUS_COLORS = {
+  "Active": "#10b981",
+  "Completed": "#64748b",
+  "On Hold": "#f59e0b",
+  "Recruiting": "#06b6d4",
+  "default": "#06b6d4",
+};
+
+export const TrialsGanttChart = ({ data, maxTrials = 10 }: TrialsGanttChartProps) => {
+  const ganttData = useMemo(() => {
+    // Filter valid trials with dates
+    const validTrials = data.filter(
+      (trial) => trial.start_date && trial.expected_end_date
+    );
+
+    // Get earliest and latest dates for timeline reference
+    const allDates = validTrials.flatMap((t) => [
+      new Date(t.start_date).getTime(),
+      new Date(t.expected_end_date).getTime(),
+    ]);
+    
+    const minDate = Math.min(...allDates);
+    const maxDate = Math.max(...allDates);
+    const timelineRange = maxDate - minDate;
+
+    // Transform data for Gantt chart
+    const transformed: GanttDataPoint[] = validTrials
+      .slice(0, maxTrials)
+      .map((trial) => {
+        const startTime = new Date(trial.start_date).getTime();
+        const endTime = new Date(trial.expected_end_date).getTime();
+        const duration = endTime - startTime;
+        const startOffset = startTime - minDate;
+        
+        return {
+          trialName: `${trial.drug_name} (${trial.trial_id})`,
+          phase: trial.phase || "Unknown",
+          status: trial.status || "Unknown",
+          startOffset: (startOffset / timelineRange) * 100,
+          duration: (duration / timelineRange) * 100,
+          completionPercent: parseFloat(trial.completion_percent) || 0,
+          startDate: new Date(trial.start_date).toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+          }),
+          endDate: new Date(trial.expected_end_date).toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+          }),
+          therapeuticArea: trial.therapeutic_area || "N/A",
+        };
+      });
+
+    return transformed;
+  }, [data, maxTrials]);
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-card/95 backdrop-blur-sm border border-cyan-glow/30 rounded-lg p-3 shadow-glow-cyan">
+          <p className="font-semibold text-text-off-white mb-2">{data.trialName}</p>
+          <div className="space-y-1 text-xs">
+            <p className="text-text-light-gray">
+              <span className="text-cyan-glow">Phase:</span> {data.phase}
+            </p>
+            <p className="text-text-light-gray">
+              <span className="text-cyan-glow">Status:</span> {data.status}
+            </p>
+            <p className="text-text-light-gray">
+              <span className="text-cyan-glow">Timeline:</span> {data.startDate} → {data.endDate}
+            </p>
+            <p className="text-text-light-gray">
+              <span className="text-cyan-glow">Progress:</span> {data.completionPercent.toFixed(1)}%
+            </p>
+            <p className="text-text-light-gray">
+              <span className="text-cyan-glow">Area:</span> {data.therapeuticArea}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (ganttData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[300px] text-text-light-gray text-sm">
+        <div className="text-center">
+          <p>No valid trial timeline data available</p>
+          <p className="text-xs mt-2">Trials need start and end dates to display</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height="100%" minHeight={400}>
+      <BarChart
+        data={ganttData}
+        layout="vertical"
+        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(6, 182, 212, 0.1)" />
+        <XAxis
+          type="number"
+          domain={[0, 100]}
+          tick={{ fill: "#94a3b8", fontSize: 12 }}
+          axisLine={{ stroke: "rgba(6, 182, 212, 0.2)" }}
+          tickFormatter={(value) => `${value}%`}
+        />
+        <YAxis
+          type="category"
+          dataKey="trialName"
+          width={200}
+          tick={{ fill: "#e2e8f0", fontSize: 11 }}
+          axisLine={{ stroke: "rgba(6, 182, 212, 0.2)" }}
+        />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(6, 182, 212, 0.1)" }} />
+        <Legend
+          wrapperStyle={{ paddingTop: "20px" }}
+          iconType="circle"
+          formatter={(value) => <span className="text-text-light-gray text-xs">{value}</span>}
+        />
+        
+        {/* Timeline bar (background) */}
+        <Bar
+          dataKey="startOffset"
+          stackId="timeline"
+          fill="transparent"
+          isAnimationActive={true}
+          animationDuration={800}
+        />
+        
+        {/* Duration bar with completion overlay */}
+        <Bar
+          dataKey="duration"
+          stackId="timeline"
+          fill="#06b6d4"
+          radius={[0, 8, 8, 0]}
+          isAnimationActive={true}
+          animationDuration={1000}
+          animationBegin={200}
+          name="Trial Duration"
+        >
+          {ganttData.map((entry, index) => {
+            const phaseColor = PHASE_COLORS[entry.phase as keyof typeof PHASE_COLORS] || PHASE_COLORS.default;
+            const statusColor = STATUS_COLORS[entry.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.default;
+            
+            // Use phase color with opacity based on completion
+            const opacity = 0.4 + (entry.completionPercent / 100) * 0.6;
+            
+            return (
+              <Cell
+                key={`cell-${index}`}
+                fill={phaseColor}
+                opacity={opacity}
+                className="transition-all duration-300 hover:opacity-100 cursor-pointer"
+              />
+            );
+          })}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};

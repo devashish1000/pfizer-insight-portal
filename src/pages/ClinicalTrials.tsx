@@ -4,6 +4,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { TrialsGanttChart } from "@/components/TrialsGanttChart";
 import { Activity, CheckCircle2, HourglassIcon, Calendar, Flag, AlertTriangle, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -395,16 +396,18 @@ const ClinicalTrials = () => {
         <div className="flex flex-1 gap-6 overflow-auto p-6">
           <div className="flex flex-1 flex-col gap-6">
             {/* Trials Timeline */}
-            <GlassCard className="min-h-[400px]">
-              <h3 className="mb-4 text-lg font-semibold text-text-off-white">Trials Timeline</h3>
-              <div className="flex-1 flex items-center justify-center text-text-light-gray text-sm">
+            <GlassCard className="min-h-[400px] flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-text-off-white">Trials Timeline</h3>
+                <div className="text-xs text-text-light-gray">
+                  Showing {Math.min(filteredData.length, 10)} of {filteredData.length} trials
+                </div>
+              </div>
+              <div className="flex-1">
                 {isLoading ? (
                   <Skeleton className="h-full w-full" />
                 ) : (
-                  <div className="text-center">
-                    <p>[Gantt Chart Visualization]</p>
-                    <p className="text-xs mt-2">Showing {filteredData.length} trials across phases</p>
-                  </div>
+                  <TrialsGanttChart data={filteredData} maxTrials={10} />
                 )}
               </div>
             </GlassCard>
