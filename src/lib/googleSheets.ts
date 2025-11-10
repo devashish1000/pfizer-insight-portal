@@ -252,66 +252,95 @@ export const fetchClinicalTrialsData = async (): Promise<any[]> => {
 
 // Fetch and merge data from all Google Sheets tabs
 export const fetchAllSheetsData = async (): Promise<any[]> => {
-  // First, detect and map all sheets dynamically
-  await detectAndMapSheets();
-  
-  const sheets = Object.keys(sheetLabelMap).map(sheetName => ({
-    name: sheetName,
-    range: `${sheetName}!A:Z`
-  }));
-
-  const allData: any[] = [];
-  const startTime = performance.now();
-
-  for (const sheet of sheets) {
+  const doFetch = async (): Promise<any[]> => {
     try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheet.range}?key=${GOOGLE_SHEETS_API_KEY}`;
-      const response = await fetch(url);
+      await detectAndMapSheets();
+    } catch (e) {
+      console.warn('[QA] detectAndMapSheets failed, continuing with defaults:', e);
+    }
 
-      if (!response.ok) {
-        console.warn(`Failed to fetch ${sheet.name}: ${response.statusText}`);
+    const sheets = Object.keys(sheetLabelMap).map(sheetName => ({
+      name: sheetName,
+      range: `${sheetName}!A:Z`
+    }));
+
+    const allData: any[] = [];
+    const startTime = performance.now();
+
+    for (const sheet of sheets) {
+      try {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheet.range}?key=${GOOGLE_SHEETS_API_KEY}`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const response = await fetch(url, { signal: controller.signal }).catch((err) => {
+          console.warn(`[QA] Fetch aborted or failed for ${sheet.name}:`, err?.name || err);
+          return undefined as any;
+        });
+        clearTimeout(timeout);
+
+        if (!response || !response.ok) {
+          console.warn(`Failed to fetch ${sheet.name}${response ? `: ${response.statusText}` : ''}`);
+          continue;
+        }
+
+        const data = await response.json();
+        const rows = data.values || [];
+
+        if (rows.length <= 1) continue; // Skip if only headers or empty
+
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        // Map rows to objects with dynamic headers
+        const sheetData = dataRows.map((row: string[]) => {
+          const record: any = { _sourceSheet: sheet.name };
+          headers.forEach((header: string, index: number) => {
+            const key = header.toLowerCase().replace(/ /g, "_");
+            record[key] = row[index] || "";
+          });
+          return record;
+        });
+
+        allData.push(...sheetData);
+      } catch (error) {
+        console.error(`Error fetching ${sheet.name}:`, error);
         continue;
       }
-
-      const data = await response.json();
-      const rows = data.values || [];
-
-      if (rows.length <= 1) continue; // Skip if only headers or empty
-
-      const headers = rows[0];
-      const dataRows = rows.slice(1);
-
-      // Map rows to objects with dynamic headers
-      const sheetData = dataRows.map((row: string[]) => {
-        const record: any = { _sourceSheet: sheet.name };
-        headers.forEach((header: string, index: number) => {
-          const key = header.toLowerCase().replace(/ /g, "_");
-          record[key] = row[index] || "";
-        });
-        return record;
-      });
-
-      allData.push(...sheetData);
-    } catch (error) {
-      console.error(`Error fetching ${sheet.name}:`, error);
     }
+
+    // Sort by timestamp descending
+    allData.sort((a, b) => {
+      const dateA = new Date(a.timestamp || 0).getTime();
+      const dateB = new Date(b.timestamp || 0).getTime();
+      return dateB - dateA;
+    });
+
+    const loadTime = performance.now() - startTime;
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    console.log(`[QA] Data Load Complete → ${allData.length} records in ${loadTime.toFixed(2)}ms`);
+    console.log(`[QA] Last Updated → ${timestamp}`);
+
+    return allData;
+  };
+
+  // Global timeout safeguard so the UI never hangs
+  const TIMEOUT_MS = 10000;
+  try {
+    return await Promise.race([
+      doFetch(),
+      new Promise<any[]>((resolve) => {
+        setTimeout(() => {
+          console.warn(`[QA] fetchAllSheetsData timed out after ${TIMEOUT_MS}ms — returning offline fallback []`);
+          resolve([]);
+        }, TIMEOUT_MS);
+      }),
+    ]);
+  } catch (e) {
+    console.error('[QA] fetchAllSheetsData failed:', e);
+    return [];
   }
-
-  // Sort by timestamp descending
-  allData.sort((a, b) => {
-    const dateA = new Date(a.timestamp || 0).getTime();
-    const dateB = new Date(b.timestamp || 0).getTime();
-    return dateB - dateA;
-  });
-
-  const loadTime = performance.now() - startTime;
-  const now = new Date();
-  const timestamp = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  
-  console.log(`[QA] Data Load Complete → ${allData.length} records in ${loadTime.toFixed(2)}ms`);
-  console.log(`[QA] Last Updated → ${timestamp}`);
-
-  return allData;
 };
 
 // Sample data for testing

@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger"
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/pfizer-insight-portal/", // 👈 for GitHub Pages
+  base: "/", // 👉 for Lovable custom domains and default hosting
   server: {
     host: "::",
     port: 8080,

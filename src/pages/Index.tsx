@@ -44,6 +44,20 @@ const Index = () => {
     }
   }, [intelligenceData]);
 
+  // Offline fallback notice if Google Sheets is unreachable
+  useEffect(() => {
+    if (!isLoading && intelligenceData.length === 0) {
+      try {
+        toast({
+          title: "Offline mode",
+          description: "Google Sheets unavailable. Dashboard loaded without data.",
+          duration: 3000,
+          className: "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20",
+        });
+      } catch {}
+    }
+  }, [isLoading, intelligenceData.length]);
+
   const metrics = useMemo(() => {
     const today = new Date().toDateString();
     const totalToday = intelligenceData.filter((item) => new Date(item.timestamp).toDateString() === today).length;
