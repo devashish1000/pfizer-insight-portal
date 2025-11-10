@@ -29,31 +29,10 @@ export const DateRangeFilter = ({
           <TooltipTrigger asChild>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="h-9 rounded-md inline-flex items-center justify-between gap-2 w-[180px] transition-all focus:outline-none focus:border-cyan-glow/40"
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #d0d5dd",
-                borderRadius: "6px",
-                padding: "6px 12px",
-                fontSize: "14px",
-                color: "#111827",
-                fontFamily: "Inter, Arial, sans-serif",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f9fafb";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#ffffff";
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.border = "1px solid #1a73e8";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.border = "1px solid #d0d5dd";
-              }}
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition inline-flex items-center gap-2 w-[180px] whitespace-nowrap"
             >
               <span>Date Range</span>
-              <MoveHorizontal className="w-4 h-4" style={{ color: "#1a73e8" }} />
+              <MoveHorizontal className="w-4 h-4" />
             </button>
           </TooltipTrigger>
           <TooltipContent 
