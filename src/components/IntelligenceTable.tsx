@@ -243,13 +243,13 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
         <div className="rounded-md border border-border overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-muted/50 border-border">
-                <TableHead className="text-muted-foreground font-semibold">Date</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Title</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Summary</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Source Type</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Impact</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Region</TableHead>
+              <TableRow className="border-cyan-glow/10 hover:bg-transparent">
+                <TableHead className="text-cyan-glow font-semibold">Date</TableHead>
+                <TableHead className="text-cyan-glow font-semibold">Title</TableHead>
+                <TableHead className="text-cyan-glow font-semibold">Summary</TableHead>
+                <TableHead className="text-cyan-glow font-semibold">Source Type</TableHead>
+                <TableHead className="text-cyan-glow font-semibold">Impact</TableHead>
+                <TableHead className="text-cyan-glow font-semibold">Region</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -265,16 +265,16 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
                   return (
                     <TableRow 
                       key={index} 
-                      className="hover:bg-muted/30 border-border cursor-pointer transition-all duration-300 hover:border-cyan-glow/30 hover-glow-row group"
+                      className="border-cyan-glow/10 hover:bg-cyan-glow/5 transition-all duration-300 cursor-pointer"
                       onClick={() => handleRowClick(item)}
                     >
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                      <TableCell className="text-sm text-text-off-white whitespace-nowrap">
                         {new Date(item.timestamp).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="font-medium text-foreground max-w-xs">
+                      <TableCell className="font-medium text-text-off-white max-w-xs">
                         {item.title || item.compound_name || "Untitled"}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-md">
+                      <TableCell className="text-sm text-text-light-gray max-w-md">
                         {item.summary || item.indication || "No summary available"}
                       </TableCell>
                       <TableCell>
@@ -287,7 +287,7 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
                           <Badge className={getImpactColor(item.impact)}>{item.impact}</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-sm text-text-off-white">
                         {item.region}
                       </TableCell>
                     </TableRow>
