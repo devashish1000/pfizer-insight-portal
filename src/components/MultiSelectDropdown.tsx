@@ -61,40 +61,77 @@ export const MultiSelectDropdown = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="h-9 rounded-lg bg-background/50 border border-border/50 text-foreground px-3 text-sm focus:outline-none focus:border-primary/40 hover:bg-background/70 transition inline-flex items-center justify-between gap-2 min-w-[180px]"
+        className="h-9 rounded-md border inline-flex items-center justify-between gap-2 min-w-[180px] transition-all focus:outline-none"
         style={{
+          backgroundColor: "#ffffff",
+          border: "1px solid #d0d5dd",
+          borderRadius: "6px",
+          padding: "6px 12px",
+          fontSize: "14px",
+          color: "#111827",
           fontFamily: "Inter, Arial, sans-serif",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "#f9fafb";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "#ffffff";
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.border = "1px solid #1a73e8";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.border = "1px solid #d0d5dd";
         }}
       >
         <span className="truncate">{displayText}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 transition-transform",
-            isOpen && "rotate-180"
+            "h-4 w-4 transition-transform"
           )}
+          style={{
+            color: "#1a73e8",
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+          }}
         />
       </button>
 
       {isOpen && (
         <div
-          className="absolute z-50 mt-2 min-w-[240px] rounded-lg bg-background border border-border shadow-lg"
+          className="absolute z-50 mt-2 min-w-[240px] rounded-lg border"
           style={{
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            backgroundColor: "#ffffff",
+            border: "1px solid #e0e0e0",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+            borderRadius: "6px",
           }}
         >
           {/* Search Field */}
-          <div className="p-2 border-b border-border/50">
+          <div className="p-2 border-b" style={{ borderColor: "#e0e0e0" }}>
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search 
+                className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4" 
+                style={{ color: "#9ca3af" }}
+              />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full h-8 pl-8 pr-2 text-sm rounded border border-border/50 bg-background focus:outline-none focus:border-primary/40"
+                className="w-full h-8 pl-8 pr-2 rounded focus:outline-none"
                 style={{
                   fontFamily: "Inter, Arial, sans-serif",
                   fontSize: "13px",
+                  border: "1px solid #ddd",
+                  padding: "5px 10px",
+                  borderRadius: "4px",
+                  backgroundColor: "#ffffff",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.border = "1px solid #1a73e8";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.border = "1px solid #ddd";
                 }}
               />
             </div>
@@ -110,29 +147,43 @@ export const MultiSelectDropdown = ({
                     key={option}
                     type="button"
                     onClick={() => toggleOption(option)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left rounded hover:bg-accent transition"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left rounded transition-colors"
                     style={{
                       fontFamily: "Inter, Arial, sans-serif",
+                      color: "#111827",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f9fafb";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
                     }}
                   >
                     <div
                       className={cn(
-                        "h-4 w-4 rounded border flex items-center justify-center",
-                        isSelected
-                          ? "bg-primary border-primary"
-                          : "border-border/50"
+                        "h-4 w-4 rounded border flex items-center justify-center"
                       )}
+                      style={{
+                        backgroundColor: isSelected ? "#1a73e8" : "transparent",
+                        borderColor: isSelected ? "#1a73e8" : "#d0d5dd",
+                      }}
                     >
-                      {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                      {isSelected && <Check className="h-3 w-3" style={{ color: "#ffffff" }} />}
                     </div>
-                    <span className={cn(isSelected && "font-medium")}>
+                    <span 
+                      className={cn(isSelected && "font-medium")}
+                      style={{ color: "#111827" }}
+                    >
                       {option}
                     </span>
                   </button>
                 );
               })
             ) : (
-              <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+              <div 
+                className="px-3 py-4 text-sm text-center"
+                style={{ color: "#9ca3af" }}
+              >
                 No results found
               </div>
             )}
@@ -140,13 +191,23 @@ export const MultiSelectDropdown = ({
 
           {/* Clear All / Select All Footer */}
           {filteredOptions.length > 0 && (
-            <div className="p-2 border-t border-border/50 flex items-center justify-between gap-2">
+            <div 
+              className="p-2 border-t flex items-center justify-between gap-2"
+              style={{ borderColor: "#e0e0e0" }}
+            >
               <button
                 type="button"
                 onClick={() => onChange([])}
-                className="text-xs text-muted-foreground hover:text-foreground transition"
+                className="text-xs transition-colors"
                 style={{
                   fontFamily: "Inter, Arial, sans-serif",
+                  color: "#6b7280",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#111827";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#6b7280";
                 }}
               >
                 Clear all
@@ -154,9 +215,16 @@ export const MultiSelectDropdown = ({
               <button
                 type="button"
                 onClick={() => onChange(filteredOptions)}
-                className="text-xs text-muted-foreground hover:text-foreground transition"
+                className="text-xs transition-colors"
                 style={{
                   fontFamily: "Inter, Arial, sans-serif",
+                  color: "#6b7280",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#111827";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#6b7280";
                 }}
               >
                 Select all

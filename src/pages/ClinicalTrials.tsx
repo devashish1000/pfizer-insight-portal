@@ -357,8 +357,8 @@ const ClinicalTrials = () => {
               options={trialPhases}
               selectedValues={trialPhaseFilter}
               onChange={setTrialPhaseFilter}
-              placeholder="Search or select phase..."
-              searchPlaceholder="Type to filter phases..."
+              placeholder="All Phases"
+              searchPlaceholder="Search phases..."
             />
 
             <select
@@ -378,8 +378,8 @@ const ClinicalTrials = () => {
               options={statuses}
               selectedValues={statusFilter}
               onChange={setStatusFilter}
-              placeholder="Search or select status..."
-              searchPlaceholder="Type to filter status..."
+              placeholder="All Statuses"
+              searchPlaceholder="Search statuses..."
             />
 
             <DateRangeFilter
