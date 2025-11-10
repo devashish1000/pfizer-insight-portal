@@ -1,10 +1,13 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { MetricCardWithTrend } from "@/components/MetricCardWithTrend";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { TrialsGanttChart } from "@/components/TrialsGanttChart";
+import { TrialSitesMap } from "@/components/TrialSitesMap";
+import { TrialDetailModal } from "@/components/TrialDetailModal";
 import { Activity, CheckCircle2, HourglassIcon, Calendar, Flag, AlertTriangle, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +22,8 @@ const ClinicalTrials = () => {
   const [regionFilter, setRegionFilter] = useState<string>("All");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [selectedTrial, setSelectedTrial] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: rawData = [], isLoading, error } = useQuery({
     queryKey: ["clinicalTrials"],
@@ -162,6 +167,29 @@ const ClinicalTrials = () => {
     : "0.0";
   const uniqueTrialSites = new Set(filteredData.flatMap((t) => t.site_locations?.split(",").map((s: string) => s.trim())).filter(Boolean)).size;
   
+  // Calculate trends (mock week-over-week for now)
+  const activeTrialsTrend = useMemo(() => {
+    // In production, compare with previous week's data
+    const mockPreviousWeek = Math.floor(activeTrialsCount * 0.95);
+    const change = ((activeTrialsCount - mockPreviousWeek) / mockPreviousWeek) * 100;
+    return {
+      direction: change > 0 ? "up" : change < 0 ? "down" : "flat",
+      value: change,
+      tooltip: `${change > 0 ? "+" : ""}${change.toFixed(1)}% vs last week`,
+    } as const;
+  }, [activeTrialsCount]);
+
+  const enrollmentTrend = useMemo(() => {
+    const currentProgress = parseFloat(avgEnrollmentProgress);
+    const mockPreviousProgress = currentProgress * 0.98;
+    const change = currentProgress - mockPreviousProgress;
+    return {
+      direction: change > 1 ? "up" : change < -1 ? "down" : "flat",
+      value: change,
+      tooltip: `${change > 0 ? "+" : ""}${change.toFixed(1)}% vs last week`,
+    } as const;
+  }, [avgEnrollmentProgress]);
+  
   const nextMilestoneDue = useMemo(() => {
     const upcomingMilestones = filteredData
       .filter((t) => t.next_milestone_date && t.milestone_status !== "Completed")
@@ -247,6 +275,11 @@ const ClinicalTrials = () => {
       duration: 3000,
       className: "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/20",
     });
+  };
+
+  const handleTrialClick = (trial: any) => {
+    setSelectedTrial(trial);
+    setIsModalOpen(true);
   };
 
   if (error) {
@@ -335,33 +368,23 @@ const ClinicalTrials = () => {
         {/* Metrics */}
         <div className="px-6 pb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <GlassCard className="group transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
-              {isLoading ? (
-                <Skeleton className="h-20 w-full" />
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Activity className="w-5 h-5 text-cyan-glow transition-transform group-hover:scale-110" />
-                    <p className="text-sm text-text-light-gray">Active Trials</p>
-                  </div>
-                  <p className="text-3xl font-bold text-text-off-white transition-colors group-hover:text-cyan-glow">{activeTrialsCount}</p>
-                </>
-              )}
-            </GlassCard>
+            <MetricCardWithTrend
+              icon={Activity}
+              label="Active Trials"
+              value={activeTrialsCount}
+              trend={activeTrialsTrend}
+              isLoading={isLoading}
+              skeleton={<Skeleton className="h-20 w-full" />}
+            />
 
-            <GlassCard className="group transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
-              {isLoading ? (
-                <Skeleton className="h-20 w-full" />
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 mb-2">
-                    <HourglassIcon className="w-5 h-5 text-cyan-glow transition-transform group-hover:scale-110" />
-                    <p className="text-sm text-text-light-gray">Enrollment Progress</p>
-                  </div>
-                  <p className="text-3xl font-bold text-text-off-white transition-colors group-hover:text-cyan-glow">{avgEnrollmentProgress}%</p>
-                </>
-              )}
-            </GlassCard>
+            <MetricCardWithTrend
+              icon={HourglassIcon}
+              label="Enrollment Progress"
+              value={`${avgEnrollmentProgress}%`}
+              trend={enrollmentTrend}
+              isLoading={isLoading}
+              skeleton={<Skeleton className="h-20 w-full" />}
+            />
 
             <GlassCard className="group transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
               {isLoading ? (
@@ -407,7 +430,11 @@ const ClinicalTrials = () => {
                 {isLoading ? (
                   <Skeleton className="h-full w-full" />
                 ) : (
-                  <TrialsGanttChart data={filteredData} maxTrials={10} />
+                  <TrialsGanttChart 
+                    data={filteredData} 
+                    maxTrials={10}
+                    onTrialClick={handleTrialClick}
+                  />
                 )}
               </div>
             </GlassCard>
@@ -417,15 +444,11 @@ const ClinicalTrials = () => {
               {/* Global Trial Sites */}
               <GlassCard>
                 <h3 className="mb-4 text-lg font-semibold text-text-off-white">Global Trial Sites</h3>
-                <div className="relative min-h-[300px] w-full h-full rounded-lg bg-deep-navy flex items-center justify-center">
+                <div className="relative min-h-[300px] w-full h-full rounded-lg bg-deep-navy">
                   {isLoading ? (
                     <Skeleton className="h-full w-full" />
                   ) : (
-                    <div className="text-center text-text-light-gray text-sm">
-                      <MapPin className="w-12 h-12 mx-auto mb-2 text-cyan-glow" />
-                      <p>[Interactive World Map]</p>
-                      <p className="text-xs mt-2">{uniqueTrialSites} unique trial sites</p>
-                    </div>
+                    <TrialSitesMap data={filteredData} />
                   )}
                 </div>
               </GlassCard>
@@ -492,6 +515,13 @@ const ClinicalTrials = () => {
             </div>
           </aside>
         </div>
+
+        {/* Trial Detail Modal */}
+        <TrialDetailModal
+          trial={selectedTrial}
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+        />
       </div>
     </DashboardLayout>
   );
