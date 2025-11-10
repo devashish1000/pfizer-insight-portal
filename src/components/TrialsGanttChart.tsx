@@ -61,40 +61,13 @@ const STATUS_COLORS = {
 };
 
 export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsGanttChartProps) => {
-  const [phaseFilters, setPhaseFilters] = useState<Set<string>>(new Set());
-  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
-    start: null,
-    end: null,
-  });
+
   const ganttData = useMemo(() => {
     // Filter valid trials with dates
-    let validTrials = data.filter(
+    const validTrials = data.filter(
       (trial) => trial.start_date && trial.expected_end_date
     );
-
-    // Apply phase filters
-    if (phaseFilters.size > 0) {
-      validTrials = validTrials.filter((trial) => !phaseFilters.has(trial.phase));
-    }
-
-    // Apply status filters
-    if (statusFilters.size > 0) {
-      validTrials = validTrials.filter((trial) => !statusFilters.has(trial.status));
-    }
-
-    // Apply date range filters
-    if (dateRange.start || dateRange.end) {
-      validTrials = validTrials.filter((trial) => {
-        const startDate = new Date(trial.start_date);
-        const endDate = new Date(trial.expected_end_date);
-        
-        if (dateRange.start && endDate < dateRange.start) return false;
-        if (dateRange.end && startDate > dateRange.end) return false;
-        return true;
-      });
-    }
 
     // Get earliest and latest dates for timeline reference
     const allDates = validTrials.flatMap((t) => [
@@ -136,40 +109,7 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
       });
 
     return transformed;
-  }, [data, maxTrials, phaseFilters, statusFilters, dateRange]);
-
-  // Get unique phases and statuses for legend
-  const uniquePhases = useMemo(() => {
-    return Array.from(new Set(data.map((t) => t.phase).filter(Boolean)));
-  }, [data]);
-
-  const uniqueStatuses = useMemo(() => {
-    return Array.from(new Set(data.map((t) => t.status).filter(Boolean)));
-  }, [data]);
-
-  const togglePhaseFilter = (phase: string) => {
-    setPhaseFilters((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(phase)) {
-        newSet.delete(phase);
-      } else {
-        newSet.add(phase);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleStatusFilter = (status: string) => {
-    setStatusFilters((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(status)) {
-        newSet.delete(status);
-      } else {
-        newSet.add(status);
-      }
-      return newSet;
-    });
-  };
+  }, [data, maxTrials]);
 
   const handleBarClick = (data: any) => {
     if (onTrialClick && data && data.payload) {
@@ -215,11 +155,7 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
       <div className="flex items-center justify-center h-full min-h-[300px] text-text-light-gray text-sm">
         <div className="text-center">
           <p>No valid trial timeline data available</p>
-          <p className="text-xs mt-2">
-            {phaseFilters.size > 0 || statusFilters.size > 0
-              ? "Try adjusting your filters"
-              : "Trials need start and end dates to display"}
-          </p>
+          <p className="text-xs mt-2">Trials need start and end dates to display</p>
         </div>
       </div>
     );
@@ -228,43 +164,7 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-cyan-glow/10">
-        {/* Phase Legend */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-text-light-gray font-semibold">Phases:</span>
-          {uniquePhases.map((phase) => (
-            <button
-              key={phase}
-              onClick={() => togglePhaseFilter(phase)}
-              className={`px-2 py-1 text-xs rounded-md border transition-all duration-200 ${
-                phaseFilters.has(phase)
-                  ? "bg-transparent border-cyan-glow/20 text-text-light-gray opacity-50"
-                  : "bg-cyan-glow/10 border-cyan-glow/30 text-cyan-glow hover:bg-cyan-glow/20"
-              }`}
-            >
-              {phase}
-            </button>
-          ))}
-        </div>
-
-        {/* Status Legend */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-text-light-gray font-semibold">Status:</span>
-          {uniqueStatuses.map((status) => (
-            <button
-              key={status}
-              onClick={() => toggleStatusFilter(status)}
-              className={`px-2 py-1 text-xs rounded-md border transition-all duration-200 ${
-                statusFilters.has(status)
-                  ? "bg-transparent border-cyan-glow/20 text-text-light-gray opacity-50"
-                  : "bg-cyan-glow/10 border-cyan-glow/30 text-cyan-glow hover:bg-cyan-glow/20"
-              }`}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-4 pb-3 border-b border-cyan-glow/10">
         {/* Zoom Controls */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-text-light-gray font-semibold">Zoom:</span>
