@@ -58,12 +58,17 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
   });
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
+  // Define official dashboard categories only (exclude backend sheets)
+  const EXCLUDED_SHEETS = ['Logs', 'Medical Research Insights', 'Clinical Trials Tracker'];
+  
   const categories = useMemo(() => {
-    return Object.values(sheetLabelMap).map(mapping => ({
-      value: mapping.name,
-      label: mapping.name,
-      description: mapping.description
-    }));
+    return Object.values(sheetLabelMap)
+      .filter(mapping => !EXCLUDED_SHEETS.includes(mapping.name))
+      .map(mapping => ({
+        value: mapping.name,
+        label: mapping.name,
+        description: mapping.description
+      }));
   }, []);
   
   const impacts = useMemo(
