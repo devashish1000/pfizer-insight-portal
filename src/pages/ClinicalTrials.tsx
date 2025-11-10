@@ -8,6 +8,7 @@ import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { TrialsGanttChart } from "@/components/TrialsGanttChart";
 import { TrialSitesMap } from "@/components/TrialSitesMap";
 import { TrialDetailModal } from "@/components/TrialDetailModal";
+import { MultiSelectDropdown } from "@/components/MultiSelectDropdown";
 import { Activity, CheckCircle2, HourglassIcon, Calendar, Flag, AlertTriangle, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -18,9 +19,9 @@ import { useRefreshData } from "@/hooks/useRefreshData";
 const ClinicalTrials = () => {
   const [therapeuticAreaFilter, setTherapeuticAreaFilter] = useState<string>("All");
   const [drugNameFilter, setDrugNameFilter] = useState<string>("All");
-  const [trialPhaseFilter, setTrialPhaseFilter] = useState<string>("All");
+  const [trialPhaseFilter, setTrialPhaseFilter] = useState<string[]>([]);
   const [regionFilter, setRegionFilter] = useState<string>("All");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [selectedTrial, setSelectedTrial] = useState<any>(null);
@@ -142,12 +143,13 @@ const ClinicalTrials = () => {
   }, [rawData]);
 
   const trialPhases = useMemo(() => {
-    return ["All", "Phase 1", "Phase 2", "Phase 3", "Phase 4", "Observational", "Other / Not Classified"];
-  }, []);
+    const phasesFromData = new Set(rawData.map((item) => normalizePhase(item.phase)).filter(Boolean));
+    return Array.from(phasesFromData).sort();
+  }, [rawData]);
 
   const statuses = useMemo(() => {
     const statusSet = new Set(rawData.map((item) => item.status).filter(Boolean));
-    return ["All", "Completed", "Terminated", "Active, Not Recruiting", "Unknown", "Withdrawn", "Recruiting", ...Array.from(statusSet)];
+    return Array.from(statusSet).sort();
   }, [rawData]);
 
   const regions = useMemo(() => {
@@ -161,9 +163,9 @@ const ClinicalTrials = () => {
       const matchesTherapeuticArea = therapeuticAreaFilter === "All" || item.therapeutic_area === therapeuticAreaFilter;
       const matchesDrugName = drugNameFilter === "All" || item.drug_name === drugNameFilter;
       const normalizedPhase = normalizePhase(item.phase);
-      const matchesTrialPhase = trialPhaseFilter === "All" || normalizedPhase === trialPhaseFilter;
+      const matchesTrialPhase = trialPhaseFilter.length === 0 || trialPhaseFilter.includes(normalizedPhase);
       const matchesRegion = regionFilter === "All" || item.region === regionFilter;
-      const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+      const matchesStatus = statusFilter.length === 0 || statusFilter.includes(item.status);
 
       let matchesDateRange = true;
       if (startDate && item.timestamp) {
@@ -350,17 +352,14 @@ const ClinicalTrials = () => {
               ))}
             </select>
 
-            <select
-              value={trialPhaseFilter}
-              onChange={(e) => setTrialPhaseFilter(e.target.value)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition"
-            >
-              {trialPhases.map((phase) => (
-                <option key={phase} value={phase} className="bg-card text-card-foreground">
-                  {phase === "All" ? "All Trial Phases" : phase}
-                </option>
-              ))}
-            </select>
+            <MultiSelectDropdown
+              label="Phases"
+              options={trialPhases}
+              selectedValues={trialPhaseFilter}
+              onChange={setTrialPhaseFilter}
+              placeholder="Search or select phase..."
+              searchPlaceholder="Type to filter phases..."
+            />
 
             <select
               value={regionFilter}
@@ -374,17 +373,14 @@ const ClinicalTrials = () => {
               ))}
             </select>
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition"
-            >
-              {statuses.map((status) => (
-                <option key={status} value={status} className="bg-card text-card-foreground">
-                  {status === "All" ? "All Statuses" : status}
-                </option>
-              ))}
-            </select>
+            <MultiSelectDropdown
+              label="Status"
+              options={statuses}
+              selectedValues={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="Search or select status..."
+              searchPlaceholder="Type to filter status..."
+            />
 
             <DateRangeFilter
               startDate={startDate}
