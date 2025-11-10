@@ -17,8 +17,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useRefreshData } from "@/hooks/useRefreshData";
 
 const ClinicalTrials = () => {
-  const [therapeuticAreaFilter, setTherapeuticAreaFilter] = useState<string>("All");
-  const [drugNameFilter, setDrugNameFilter] = useState<string>("All");
+  const [therapeuticAreaFilter, setTherapeuticAreaFilter] = useState<string[]>([]);
+  const [drugNameFilter, setDrugNameFilter] = useState<string[]>([]);
   const [trialPhaseFilter, setTrialPhaseFilter] = useState<string[]>([]);
   const [regionFilter, setRegionFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -134,12 +134,12 @@ const ClinicalTrials = () => {
   // Extract unique filter options
   const therapeuticAreas = useMemo(() => {
     const areas = new Set(rawData.map((item) => item.therapeutic_area).filter(Boolean));
-    return ["All", ...Array.from(areas)];
+    return Array.from(areas).sort();
   }, [rawData]);
 
   const drugNames = useMemo(() => {
     const names = new Set(rawData.map((item) => item.drug_name).filter(Boolean));
-    return ["All", ...Array.from(names)];
+    return Array.from(names).sort();
   }, [rawData]);
 
   const trialPhases = useMemo(() => {
@@ -160,8 +160,8 @@ const ClinicalTrials = () => {
   // Apply filters
   const filteredData = useMemo(() => {
     return rawData.filter((item) => {
-      const matchesTherapeuticArea = therapeuticAreaFilter === "All" || item.therapeutic_area === therapeuticAreaFilter;
-      const matchesDrugName = drugNameFilter === "All" || item.drug_name === drugNameFilter;
+      const matchesTherapeuticArea = therapeuticAreaFilter.length === 0 || therapeuticAreaFilter.includes(item.therapeutic_area);
+      const matchesDrugName = drugNameFilter.length === 0 || drugNameFilter.includes(item.drug_name);
       const normalizedPhase = normalizePhase(item.phase);
       const matchesTrialPhase = trialPhaseFilter.length === 0 || trialPhaseFilter.includes(normalizedPhase);
       const matchesRegion = regionFilter === "All" || item.region === regionFilter;
@@ -328,29 +328,25 @@ const ClinicalTrials = () => {
         {/* Filters */}
         <div className="px-6 pt-4">
           <div className="flex flex-wrap items-center gap-3">
-            <select
-              value={therapeuticAreaFilter}
-              onChange={(e) => setTherapeuticAreaFilter(e.target.value)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition"
-            >
-              {therapeuticAreas.map((area) => (
-                <option key={area} value={area} className="bg-card text-card-foreground">
-                  {area === "All" ? "All Therapeutic Areas" : area}
-                </option>
-              ))}
-            </select>
+            <MultiSelectDropdown
+              label="All Therapeutic Areas"
+              options={therapeuticAreas}
+              selectedValues={therapeuticAreaFilter}
+              onChange={setTherapeuticAreaFilter}
+              placeholder="All Therapeutic Areas"
+              searchPlaceholder="Search therapeutic areas..."
+              width="220px"
+            />
 
-            <select
-              value={drugNameFilter}
-              onChange={(e) => setDrugNameFilter(e.target.value)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition"
-            >
-              {drugNames.map((name) => (
-                <option key={name} value={name} className="bg-card text-card-foreground">
-                  {name === "All" ? "All Drug Names" : name}
-                </option>
-              ))}
-            </select>
+            <MultiSelectDropdown
+              label="All Drug Names"
+              options={drugNames}
+              selectedValues={drugNameFilter}
+              onChange={setDrugNameFilter}
+              placeholder="All Drug Names"
+              searchPlaceholder="Search drug names..."
+              width="180px"
+            />
 
             <MultiSelectDropdown
               label="All Phases"
