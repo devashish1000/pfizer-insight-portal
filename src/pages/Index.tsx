@@ -59,12 +59,23 @@ const Index = () => {
   }, [isLoading, intelligenceData.length]);
 
   const metrics = useMemo(() => {
+    // Exclude backend sheets from metrics
+    const EXCLUDED_SHEETS = ["Logs", "Medical Research Insights", "Clinical Trials Tracker", "Medical_Research_Insights", "Clinical_Trials_Tracker"];
+    const filteredData = intelligenceData.filter((item) => {
+      const sourceSheet = item._sourceSheet || "";
+      const category = item.category || "";
+      return !EXCLUDED_SHEETS.some(excluded => 
+        sourceSheet.toLowerCase().includes(excluded.toLowerCase()) ||
+        category.toLowerCase().includes(excluded.toLowerCase())
+      );
+    });
+
     const today = new Date().toDateString();
-    const totalToday = intelligenceData.filter((item) => new Date(item.timestamp).toDateString() === today).length;
-    const highImpact = intelligenceData.filter((item) => item.impact?.toLowerCase().includes("high")).length;
-    const categoryBreakdown = intelligenceData.reduce(
+    const totalToday = filteredData.filter((item) => new Date(item.timestamp).toDateString() === today).length;
+    const highImpact = filteredData.filter((item) => item.impact?.toLowerCase().includes("high")).length;
+    const categoryBreakdown = filteredData.reduce(
       (acc, item) => {
-        const category = item.category || item._sourceSheet || "Other";
+        const category = item.category || "Other";
         acc[category] = (acc[category] || 0) + 1;
         return acc;
       },

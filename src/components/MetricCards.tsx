@@ -11,6 +11,15 @@ export const MetricCards = ({ totalToday, highImpact, categoryBreakdown }: Metri
   const topCategory = Object.entries(categoryBreakdown)
     .sort(([, a], [, b]) => b - a)[0];
 
+  // Determine activity level and color
+  const getActivityIndicator = (count: number) => {
+    if (count >= 10) return { emoji: "🟢", label: "High activity", color: "text-success" };
+    if (count >= 5) return { emoji: "🟡", label: "Moderate activity", color: "text-warning" };
+    return { emoji: "🔵", label: "Low activity", color: "text-info" };
+  };
+
+  const activityIndicator = topCategory ? getActivityIndicator(topCategory[1]) : null;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <GlassCard>
@@ -41,9 +50,16 @@ export const MetricCards = ({ totalToday, highImpact, categoryBreakdown }: Metri
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Top Category</p>
-            <p className="text-xl font-bold text-foreground truncate">
-              {topCategory ? topCategory[0] : "N/A"}
-            </p>
+            <div className="flex items-center gap-2">
+              {activityIndicator && (
+                <span className="text-xl" title={activityIndicator.label}>
+                  {activityIndicator.emoji}
+                </span>
+              )}
+              <p className="text-xl font-semibold text-foreground truncate">
+                {topCategory ? topCategory[0] : "N/A"}
+              </p>
+            </div>
             <p className="text-sm text-muted-foreground">
               {topCategory ? `${topCategory[1]} updates` : "No data"}
             </p>
