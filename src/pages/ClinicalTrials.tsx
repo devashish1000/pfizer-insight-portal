@@ -33,14 +33,34 @@ const ClinicalTrials = () => {
       const uniqueTrialIds = new Set(rawData.map((t) => t.trial_id).filter(Boolean));
       const uniqueRegions = new Set(rawData.map((t) => t.region).filter(Boolean));
       const uniquePhases = new Set(rawData.map((t) => t.phase).filter(Boolean));
+      const uniqueDrugs = new Set(rawData.map((t) => t.drug_name).filter(Boolean));
+      const uniqueTherapeuticAreas = new Set(rawData.map((t) => t.therapeutic_area).filter(Boolean));
       const uniqueSites = new Set(rawData.flatMap((t) => t.site_locations?.split(",").map((s: string) => s.trim())).filter(Boolean));
       
       console.log("=== CLINICAL TRIALS QA VALIDATION ===");
-      console.log(`Total Trials Loaded: ${rawData.length}`);
-      console.log(`Unique Trial IDs: ${uniqueTrialIds.size}`);
-      console.log(`Unique Regions: ${Array.from(uniqueRegions).join(", ")}`);
-      console.log(`Unique Phases: ${Array.from(uniquePhases).join(", ")}`);
-      console.log(`Unique Trial Sites: ${uniqueSites.size}`);
+      console.log(`📊 Total Trials Loaded: ${rawData.length}`);
+      console.log(`🔑 Unique Trial IDs: ${uniqueTrialIds.size}`);
+      console.log(`🏥 Unique Drug Names: ${Array.from(uniqueDrugs).slice(0, 5).join(", ")}${uniqueDrugs.size > 5 ? "..." : ""}`);
+      console.log(`💊 Unique Therapeutic Areas: ${Array.from(uniqueTherapeuticAreas).join(", ")}`);
+      console.log(`🧬 Unique Phases: ${Array.from(uniquePhases).join(", ")}`);
+      console.log(`🌍 Unique Regions: ${Array.from(uniqueRegions).join(", ")}`);
+      console.log(`📍 Unique Trial Sites: ${uniqueSites.size}`);
+      
+      // Validate data integrity
+      const datePattern = /^\d{4}-\d{2}-\d{2}/;
+      const potentialDateInRegion = Array.from(uniqueRegions).some((r) => datePattern.test(String(r)));
+      if (potentialDateInRegion) {
+        console.error("❌ DATA MAPPING ERROR: Region field contains date values. Check column indices in fetchClinicalTrialsData.");
+      }
+      
+      const therapeuticAreasInPhases = Array.from(uniquePhases).some((p) => 
+        !String(p).toLowerCase().includes("phase") && 
+        !String(p).toLowerCase().includes("i") && 
+        !String(p).toLowerCase().includes("trial")
+      );
+      if (therapeuticAreasInPhases) {
+        console.error("❌ DATA MAPPING ERROR: Phase field may contain therapeutic area values. Check column indices.");
+      }
       
       // Validate dates
       const invalidDates = rawData.filter((t) => {
@@ -51,30 +71,42 @@ const ClinicalTrials = () => {
       
       if (invalidDates.length > 0) {
         console.warn(`⚠️ ${invalidDates.length} trials have invalid date formats`);
+        invalidDates.slice(0, 3).forEach((t) => {
+          console.warn(`   Trial ${t.trial_id}: start_date="${t.start_date}", end_date="${t.expected_end_date}"`);
+        });
       }
       
       // Check for unmapped sites
       const unmappedSites = rawData.filter((t) => !t.site_locations || t.site_locations.trim() === "");
       if (unmappedSites.length > 0) {
-        unmappedSites.forEach((t) => {
-          console.warn(`⚠️ Unmapped site: Trial ${t.trial_id} has no site_locations`);
+        console.warn(`⚠️ ${unmappedSites.length} trials have no site_locations`);
+        unmappedSites.slice(0, 3).forEach((t) => {
+          console.warn(`   Trial ${t.trial_id} (${t.drug_name})`);
         });
       }
       
-      // Count active trials
+      // Count active trials and milestones
       const activeTrials = rawData.filter((t) => t.status === "Active").length;
+      const completedTrials = rawData.filter((t) => t.status?.toLowerCase() === "completed").length;
       const trialsMissingMilestones = rawData.filter((t) => !t.key_milestone || t.key_milestone.trim() === "").length;
       const percentMissingMilestones = ((trialsMissingMilestones / rawData.length) * 100).toFixed(1);
       
-      console.log(`Active Trials: ${activeTrials}`);
-      console.log(`Trials Missing Milestones: ${trialsMissingMilestones} (${percentMissingMilestones}%)`);
+      console.log(`✅ Active Trials: ${activeTrials} | Completed: ${completedTrials}`);
+      console.log(`📋 Trials Missing Milestones: ${trialsMissingMilestones} (${percentMissingMilestones}%)`);
+      console.log(`🎯 Bottlenecks Detected: ${rawData.filter((t) => t.bottleneck_category).length}`);
       console.log("=====================================");
       
+      const hasErrors = potentialDateInRegion || therapeuticAreasInPhases;
+      
       toast({
-        title: "✅ QA Review Complete",
-        description: "Data integrity and visualization checks passed",
+        title: hasErrors ? "⚠️ QA Issues Detected" : "✅ QA Review Complete",
+        description: hasErrors 
+          ? "Data mapping errors found. Check console for details."
+          : `${rawData.length} trials validated successfully`,
         duration: 3000,
-        className: "bg-success/10 text-success border border-success/20",
+        className: hasErrors 
+          ? "bg-warning/10 text-warning border border-warning/20"
+          : "bg-success/10 text-success border border-success/20",
       });
     }
   }, [rawData]);
@@ -234,6 +266,7 @@ const ClinicalTrials = () => {
           subtitle="End-to-end visibility across global trials and milestones"
           icon={Activity}
           onRefresh={refreshData}
+          isRefreshing={isRefreshing}
           onExport={handleExport}
         />
         
@@ -301,58 +334,58 @@ const ClinicalTrials = () => {
         {/* Metrics */}
         <div className="px-6 pb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <GlassCard className="transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
+            <GlassCard className="group transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
               {isLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : (
                 <>
                   <div className="flex items-center gap-2 mb-2">
-                    <Activity className="w-5 h-5 text-cyan-glow" />
+                    <Activity className="w-5 h-5 text-cyan-glow transition-transform group-hover:scale-110" />
                     <p className="text-sm text-text-light-gray">Active Trials</p>
                   </div>
-                  <p className="text-3xl font-bold text-text-off-white">{activeTrialsCount}</p>
+                  <p className="text-3xl font-bold text-text-off-white transition-colors group-hover:text-cyan-glow">{activeTrialsCount}</p>
                 </>
               )}
             </GlassCard>
 
-            <GlassCard className="transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
+            <GlassCard className="group transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
               {isLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : (
                 <>
                   <div className="flex items-center gap-2 mb-2">
-                    <HourglassIcon className="w-5 h-5 text-cyan-glow" />
+                    <HourglassIcon className="w-5 h-5 text-cyan-glow transition-transform group-hover:scale-110" />
                     <p className="text-sm text-text-light-gray">Enrollment Progress</p>
                   </div>
-                  <p className="text-3xl font-bold text-text-off-white">{avgEnrollmentProgress}%</p>
+                  <p className="text-3xl font-bold text-text-off-white transition-colors group-hover:text-cyan-glow">{avgEnrollmentProgress}%</p>
                 </>
               )}
             </GlassCard>
 
-            <GlassCard className="transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
+            <GlassCard className="group transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
               {isLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : (
                 <>
                   <div className="flex items-center gap-2 mb-2">
-                    <MapPin className="w-5 h-5 text-cyan-glow" />
+                    <MapPin className="w-5 h-5 text-cyan-glow transition-transform group-hover:scale-110" />
                     <p className="text-sm text-text-light-gray">Global Trial Sites</p>
                   </div>
-                  <p className="text-3xl font-bold text-text-off-white">{uniqueTrialSites}</p>
+                  <p className="text-3xl font-bold text-text-off-white transition-colors group-hover:text-cyan-glow">{uniqueTrialSites}</p>
                 </>
               )}
             </GlassCard>
 
-            <GlassCard className="transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
+            <GlassCard className="group transition-all duration-300 hover:scale-105 hover:shadow-glow-cyan cursor-pointer">
               {isLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : (
                 <>
                   <div className="flex items-center gap-2 mb-2">
-                    <Flag className="w-5 h-5 text-cyan-glow" />
+                    <Flag className="w-5 h-5 text-cyan-glow transition-transform group-hover:scale-110" />
                     <p className="text-sm text-text-light-gray">Next Milestone Due</p>
                   </div>
-                  <p className="text-2xl font-bold text-text-off-white">{nextMilestoneDue}</p>
+                  <p className="text-2xl font-bold text-text-off-white transition-colors group-hover:text-cyan-glow">{nextMilestoneDue}</p>
                 </>
               )}
             </GlassCard>
