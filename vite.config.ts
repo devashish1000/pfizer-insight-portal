@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger"
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/pfizer-insight-portal/", // 👈 ADD THIS LINE for GitHub Pages
+  base: "/pfizer-insight-portal/", // 👈 for GitHub Pages
   server: {
     host: "::",
     port: 8080,
