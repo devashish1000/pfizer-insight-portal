@@ -9,7 +9,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -130,93 +129,91 @@ export const TrialSitesMap = ({ data }: TrialSitesMapProps) => {
   }
 
   return (
-    <TooltipProvider>
-      <div className="relative w-full h-full min-h-[300px]">
-        <ComposableMap
-          projection="geoMercator"
-          projectionConfig={{
-            scale: 120,
-          }}
-          className="w-full h-full"
-        >
-          <ZoomableGroup center={[0, 20]} zoom={1}>
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="rgba(6, 182, 212, 0.1)"
-                    stroke="rgba(6, 182, 212, 0.2)"
-                    strokeWidth={0.5}
-                    style={{
-                      default: { outline: "none" },
-                      hover: { 
-                        fill: "rgba(6, 182, 212, 0.15)", 
-                        outline: "none",
-                        cursor: "pointer"
-                      },
-                      pressed: { outline: "none" },
-                    }}
-                  />
-                ))
-              }
-            </Geographies>
+    <div className="relative w-full h-full min-h-[300px]">
+      <ComposableMap
+        projection="geoMercator"
+        projectionConfig={{
+          scale: 120,
+        }}
+        className="w-full h-full"
+      >
+        <ZoomableGroup center={[0, 20]} zoom={1}>
+          <Geographies geography={geoUrl}>
+            {({ geographies }) =>
+              geographies.map((geo) => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill="rgba(6, 182, 212, 0.1)"
+                  stroke="rgba(6, 182, 212, 0.2)"
+                  strokeWidth={0.5}
+                  style={{
+                    default: { outline: "none" },
+                    hover: { 
+                      fill: "rgba(6, 182, 212, 0.15)", 
+                      outline: "none",
+                      cursor: "pointer"
+                    },
+                    pressed: { outline: "none" },
+                  }}
+                />
+              ))
+            }
+          </Geographies>
+          
+          {siteMarkers.map((marker, index) => {
+            const size = Math.min(8 + marker.count * 2, 20);
+            const activeTrials = marker.trials.filter((t) => t.status === "Active").length;
             
-            {siteMarkers.map((marker, index) => {
-              const size = Math.min(8 + marker.count * 2, 20);
-              const activeTrials = marker.trials.filter((t) => t.status === "Active").length;
-              
-              return (
-                <Marker
-                  key={`marker-${index}`}
-                  coordinates={marker.coordinates}
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <g className="cursor-pointer transition-all duration-300 hover:scale-125">
-                        <circle
-                          r={size}
-                          fill="rgba(6, 182, 212, 0.3)"
-                          className="animate-pulse"
-                        />
-                        <circle
-                          r={size * 0.6}
-                          fill="#06b6d4"
-                          stroke="#fff"
-                          strokeWidth={1.5}
-                          className="drop-shadow-glow"
-                        />
-                        <text
-                          textAnchor="middle"
-                          y={size + 12}
-                          style={{ fontSize: "10px", fill: "#e2e8f0", fontWeight: "500" }}
-                        >
-                          {marker.count}
-                        </text>
-                      </g>
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-card/95 border-cyan-glow/30 text-text-off-white max-w-xs">
-                      <div className="space-y-1">
-                        <p className="font-semibold">{marker.count} Trial{marker.count > 1 ? "s" : ""}</p>
-                        <p className="text-xs text-text-light-gray">Active: {activeTrials}</p>
-                        <div className="text-xs space-y-0.5 mt-2">
-                          {marker.trials.slice(0, 3).map((t, i) => (
-                            <p key={i}>• {t.drug_name} ({t.phase})</p>
-                          ))}
-                          {marker.count > 3 && (
-                            <p className="text-cyan-glow">+{marker.count - 3} more</p>
-                          )}
-                        </div>
+            return (
+              <Marker
+                key={`marker-${index}`}
+                coordinates={marker.coordinates}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <g className="cursor-pointer transition-all duration-300 hover:scale-125">
+                      <circle
+                        r={size}
+                        fill="rgba(6, 182, 212, 0.3)"
+                        className="animate-pulse"
+                      />
+                      <circle
+                        r={size * 0.6}
+                        fill="#06b6d4"
+                        stroke="#fff"
+                        strokeWidth={1.5}
+                        className="drop-shadow-glow"
+                      />
+                      <text
+                        textAnchor="middle"
+                        y={size + 12}
+                        style={{ fontSize: "10px", fill: "#e2e8f0", fontWeight: "500" }}
+                      >
+                        {marker.count}
+                      </text>
+                    </g>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-card/95 border-cyan-glow/30 text-text-off-white max-w-xs">
+                    <div className="space-y-1">
+                      <p className="font-semibold">{marker.count} Trial{marker.count > 1 ? "s" : ""}</p>
+                      <p className="text-xs text-text-light-gray">Active: {activeTrials}</p>
+                      <div className="text-xs space-y-0.5 mt-2">
+                        {marker.trials.slice(0, 3).map((t, i) => (
+                          <p key={i}>• {t.drug_name} ({t.phase})</p>
+                        ))}
+                        {marker.count > 3 && (
+                          <p className="text-cyan-glow">+{marker.count - 3} more</p>
+                        )}
                       </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </Marker>
-              );
-            })}
-          </ZoomableGroup>
-        </ComposableMap>
-      </div>
-    </TooltipProvider>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </Marker>
+            );
+          })}
+        </ZoomableGroup>
+      </ComposableMap>
+    </div>
   );
 };
