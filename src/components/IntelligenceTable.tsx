@@ -162,20 +162,20 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-glow/50 w-4 h-4" />
             <Input
               placeholder="Search updates..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 bg-secondary border-border"
+              className="pl-10 h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow placeholder:text-cyan-glow/50 focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition"
             />
           </div>
           <div className="flex items-center gap-2">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border hover:bg-secondary/80 transition-colors">
+              <SelectTrigger className="w-full md:w-[180px] h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow hover:bg-cyan-glow/20 focus:border-cyan-glow/40 transition">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
-              <SelectContent className="bg-popover border-border z-50">
+              <SelectContent className="bg-card/95 backdrop-blur-sm border-cyan-glow/20 z-50">
                 <SelectItem value="All Categories">All Categories</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
@@ -205,10 +205,10 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
             </TooltipProvider>
           </div>
           <Select value={impactFilter} onValueChange={setImpactFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border hover:bg-secondary/80 transition-colors">
+            <SelectTrigger className="w-full md:w-[180px] h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow hover:bg-cyan-glow/20 focus:border-cyan-glow/40 transition">
               <SelectValue placeholder="Impact" />
             </SelectTrigger>
-            <SelectContent className="bg-popover border-border z-50">
+            <SelectContent className="bg-card/95 backdrop-blur-sm border-cyan-glow/20 z-50">
               {impacts.map((imp) => (
                 <SelectItem key={imp} value={imp}>
                   {imp}
@@ -217,10 +217,10 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
             </SelectContent>
           </Select>
           <Select value={regionFilter} onValueChange={setRegionFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-secondary border-border hover:bg-secondary/80 transition-colors">
+            <SelectTrigger className="w-full md:w-[180px] h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow hover:bg-cyan-glow/20 focus:border-cyan-glow/40 transition">
               <SelectValue placeholder="Region" />
             </SelectTrigger>
-            <SelectContent className="bg-popover border-border z-50">
+            <SelectContent className="bg-card/95 backdrop-blur-sm border-cyan-glow/20 z-50">
               {regions.map((reg) => (
                 <SelectItem key={reg} value={reg}>
                   {reg}
