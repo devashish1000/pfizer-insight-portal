@@ -23,13 +23,13 @@ export const DateRangeFilter = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 self-start">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition inline-flex items-center gap-2 w-[180px] whitespace-nowrap"
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition inline-flex items-center justify-center gap-2 w-[180px] whitespace-nowrap"
             >
               <span>Date Range</span>
               <MoveHorizontal className="w-4 h-4" />
