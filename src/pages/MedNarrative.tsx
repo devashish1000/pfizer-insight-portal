@@ -45,12 +45,15 @@ const MedNarrative = () => {
   const [selectedRecord, setSelectedRecord] = useState<MedicalResearchRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [startDate, setStartDate] = useState<Date | undefined>(() => {
     const date = new Date();
     date.setDate(date.getDate() - 30);
     return date;
   });
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  
+  const itemsPerPage = 10;
 
   const loadData = async () => {
     setLoading(true);
@@ -124,6 +127,12 @@ const MedNarrative = () => {
       return true;
     });
   }, [data, selectedSentiment, selectedSourceType, selectedImpact, startDate, endDate]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredData, currentPage]);
 
   const metrics = useMemo(() => {
     const activeNarratives = filteredData.length;
@@ -370,7 +379,7 @@ const MedNarrative = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredData.map((record, index) => (
+                  {paginatedData.map((record, index) => (
                     <TableRow
                       key={index}
                       className="border-cyan-glow/10 hover:bg-cyan-glow/5 hover:border-l-2 hover:border-l-cyan-glow transition-all duration-300 cursor-pointer"
@@ -399,10 +408,32 @@ const MedNarrative = () => {
               </Table>
             )}
           </div>
-          <div className="px-6 py-4 border-t border-cyan-glow/10">
+          <div className="px-6 py-4 border-t border-cyan-glow/10 flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-text-light-gray">
-              Showing {filteredData.length} of {data.length} records
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} records
             </p>
+            
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm font-semibold rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  ← Previous
+                </button>
+                <span className="text-sm font-semibold text-primary px-2">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm font-semibold rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           </div>
         </GlassCard>
       </div>

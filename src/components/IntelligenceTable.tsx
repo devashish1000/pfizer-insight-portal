@@ -51,12 +51,15 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
   const [regionFilter, setRegionFilter] = useState<string>("All Regions");
   const [selectedRecord, setSelectedRecord] = useState<IntelligenceData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [startDate, setStartDate] = useState<Date | undefined>(() => {
     const date = new Date();
     date.setDate(date.getDate() - 30); // Default to last 30 days
     return date;
   });
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  
+  const itemsPerPage = 10;
 
   // Define official dashboard categories only (exclude backend sheets)
   const EXCLUDED_SHEETS = ['Logs', 'Medical Research Insights', 'Clinical Trials Tracker'];
@@ -111,6 +114,12 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
       return matchesSearch && matchesCategory && matchesImpact && matchesRegion;
     });
   }, [data, search, categoryFilter, impactFilter, regionFilter, startDate, endDate]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredData, currentPage]);
 
   const getImpactColor = (impact: string) => {
     const lower = impact?.toLowerCase() || "";
@@ -244,14 +253,14 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.length === 0 ? (
+              {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     No updates found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredData.slice(0, 100).map((item, index) => {
+                paginatedData.map((item, index) => {
                   const sourceBadge = getSourceTypeBadge(item._sourceSheet);
                   return (
                     <TableRow 
@@ -289,10 +298,32 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
           </Table>
         </div>
 
-        <div className="flex justify-between items-center text-sm text-muted-foreground">
-          <span>
-            Showing {Math.min(filteredData.length, 100)} of {data.length} updates
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+          <span className="text-sm text-muted-foreground">
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} updates
           </span>
+          
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-sm font-semibold rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                ← Previous
+              </button>
+              <span className="text-sm font-semibold text-primary px-2">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-sm font-semibold rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

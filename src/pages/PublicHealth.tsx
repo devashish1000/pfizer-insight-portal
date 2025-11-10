@@ -3,10 +3,15 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { FilterBar } from "@/components/FilterBar";
 import { GlassCard } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Globe2, TrendingUp, AlertTriangle, Activity } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useState, useMemo } from "react";
 
 const PublicHealth = () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // Dummy state for refresh - in production this would fetch actual data
   const handleRefresh = () => {
     console.log(`[${new Date().toLocaleTimeString()}] Public Health data refreshed`);
@@ -54,6 +59,12 @@ const PublicHealth = () => {
       keyIndicators: ["Resistance Rate: +8%", "New Patterns: 3", "Stewardship Compliance: 84%"],
     },
   ];
+
+  const totalPages = Math.ceil(forecasts.length / itemsPerPage);
+  const paginatedForecasts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return forecasts.slice(startIndex, startIndex + itemsPerPage);
+  }, [currentPage]);
 
   const metrics = [
     { label: "Active Forecasts", value: "24", icon: TrendingUp, color: "text-cyan-glow" },
@@ -152,10 +163,87 @@ const PublicHealth = () => {
             ))}
           </div>
 
+          <GlassCard className="overflow-hidden">
+            <div className="px-6 pt-6 pb-4">
+              <h2 className="text-xl font-semibold text-text-off-white mb-6">Active Public Health Forecasts</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-cyan-glow/10 hover:bg-transparent">
+                    <TableHead className="text-cyan-glow font-semibold">ID</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Title</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Region</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Severity</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Trend</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Confidence</TableHead>
+                    <TableHead className="text-cyan-glow font-semibold">Timeframe</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedForecasts.map((forecast) => (
+                    <TableRow 
+                      key={forecast.id}
+                      className="border-cyan-glow/10 hover:bg-cyan-glow/5 transition-all duration-300 cursor-pointer"
+                    >
+                      <TableCell className="font-medium text-text-off-white">{forecast.id}</TableCell>
+                      <TableCell className="text-text-off-white font-medium max-w-md">{forecast.title}</TableCell>
+                      <TableCell className="text-text-off-white">{forecast.region}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getSeverityColor(forecast.severity)}>
+                          {forecast.severity}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`text-sm font-medium ${getTrendColor(forecast.trend)}`}>
+                          {forecast.trend}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="border-border/30">
+                          {forecast.confidence}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-text-off-white text-sm">{forecast.timeframe}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="px-6 py-4 border-t border-cyan-glow/10 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-text-light-gray">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, forecasts.length)} of {forecasts.length} forecasts
+              </p>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 text-sm font-semibold rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    ← Previous
+                  </button>
+                  <span className="text-sm font-semibold text-primary px-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 text-sm font-semibold rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          </GlassCard>
+
+          {/* Expandable Forecast Cards Below Table */}
           <GlassCard>
-            <h2 className="text-xl font-semibold text-text-off-white mb-6">Active Public Health Forecasts</h2>
+            <h2 className="text-xl font-semibold text-text-off-white mb-6">Forecast Details</h2>
             <div className="space-y-4">
-              {forecasts.map((forecast) => (
+              {paginatedForecasts.map((forecast) => (
                 <div
                   key={forecast.id}
                   className="p-5 rounded-lg bg-cyan-glow/5 border border-cyan-glow/10 hover:border-cyan-glow/30 transition-all duration-300"

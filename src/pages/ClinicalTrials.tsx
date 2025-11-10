@@ -20,10 +20,23 @@ const ClinicalTrials = () => {
   const [drugNameFilter, setDrugNameFilter] = useState<string>("All");
   const [trialPhaseFilter, setTrialPhaseFilter] = useState<string>("All");
   const [regionFilter, setRegionFilter] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [selectedTrial, setSelectedTrial] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Phase normalization function
+  const normalizePhase = (phase: string): string => {
+    if (!phase) return "Other / Not Classified";
+    const p = phase.toLowerCase();
+    if (p.includes("phase 1") || p.includes("phase i") && !p.includes("ii")) return "Phase 1";
+    if (p.includes("phase 2") || p.includes("phase ii") && !p.includes("iii")) return "Phase 2";
+    if (p.includes("phase 3") || p.includes("phase iii")) return "Phase 3";
+    if (p.includes("phase 4") || p.includes("phase iv")) return "Phase 4";
+    if (p.includes("observational")) return "Observational";
+    return "Other / Not Classified";
+  };
 
   const { data: rawData = [], isLoading, error } = useQuery({
     queryKey: ["clinicalTrials"],
@@ -129,8 +142,12 @@ const ClinicalTrials = () => {
   }, [rawData]);
 
   const trialPhases = useMemo(() => {
-    const phases = new Set(rawData.map((item) => item.phase).filter(Boolean));
-    return ["All", ...Array.from(phases)];
+    return ["All", "Phase 1", "Phase 2", "Phase 3", "Phase 4", "Observational", "Other / Not Classified"];
+  }, []);
+
+  const statuses = useMemo(() => {
+    const statusSet = new Set(rawData.map((item) => item.status).filter(Boolean));
+    return ["All", "Completed", "Terminated", "Active, Not Recruiting", "Unknown", "Withdrawn", "Recruiting", ...Array.from(statusSet)];
   }, [rawData]);
 
   const regions = useMemo(() => {
@@ -143,8 +160,10 @@ const ClinicalTrials = () => {
     return rawData.filter((item) => {
       const matchesTherapeuticArea = therapeuticAreaFilter === "All" || item.therapeutic_area === therapeuticAreaFilter;
       const matchesDrugName = drugNameFilter === "All" || item.drug_name === drugNameFilter;
-      const matchesTrialPhase = trialPhaseFilter === "All" || item.phase === trialPhaseFilter;
+      const normalizedPhase = normalizePhase(item.phase);
+      const matchesTrialPhase = trialPhaseFilter === "All" || normalizedPhase === trialPhaseFilter;
       const matchesRegion = regionFilter === "All" || item.region === regionFilter;
+      const matchesStatus = statusFilter === "All" || item.status === statusFilter;
 
       let matchesDateRange = true;
       if (startDate && item.timestamp) {
@@ -156,9 +175,9 @@ const ClinicalTrials = () => {
         matchesDateRange = matchesDateRange && itemDate <= endDate;
       }
 
-      return matchesTherapeuticArea && matchesDrugName && matchesTrialPhase && matchesRegion && matchesDateRange;
+      return matchesTherapeuticArea && matchesDrugName && matchesTrialPhase && matchesRegion && matchesStatus && matchesDateRange;
     });
-  }, [rawData, therapeuticAreaFilter, drugNameFilter, trialPhaseFilter, regionFilter, startDate, endDate]);
+  }, [rawData, therapeuticAreaFilter, drugNameFilter, trialPhaseFilter, regionFilter, statusFilter, startDate, endDate]);
 
   // Calculate metrics
   const activeTrialsCount = filteredData.filter((t) => t.status === "Active").length;
@@ -351,6 +370,18 @@ const ClinicalTrials = () => {
               {regions.map((region) => (
                 <option key={region} value={region} className="bg-card text-card-foreground">
                   {region === "All" ? "All Regions" : region}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-9 rounded-lg bg-cyan-glow/10 border border-cyan-glow/20 text-cyan-glow px-3 text-sm focus:outline-none focus:border-cyan-glow/40 hover:bg-cyan-glow/20 transition"
+            >
+              {statuses.map((status) => (
+                <option key={status} value={status} className="bg-card text-card-foreground">
+                  {status === "All" ? "All Statuses" : status}
                 </option>
               ))}
             </select>
