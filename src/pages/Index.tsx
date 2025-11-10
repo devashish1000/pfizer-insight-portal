@@ -151,16 +151,11 @@ const Index = () => {
           />
         <div className="container mx-auto px-6 pt-4 pb-2 md:pt-6">
           <IntelligenceTable data={intelligenceData}>
-            {/* Metric Cards rendered between separator and table */}
-            <div className="mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MetricCards
-                  totalToday={metrics.totalToday}
-                  highImpact={metrics.highImpact}
-                  categoryBreakdown={metrics.categoryBreakdown}
-                />
-              </div>
-            </div>
+            <MetricCards
+              totalToday={metrics.totalToday}
+              highImpact={metrics.highImpact}
+              categoryBreakdown={metrics.categoryBreakdown}
+            />
           </IntelligenceTable>
         </div>
       </div>

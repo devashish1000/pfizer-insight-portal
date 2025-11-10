@@ -21,8 +21,8 @@ export const MetricCards = ({ totalToday, highImpact, categoryBreakdown }: Metri
   const activityIndicator = topCategory ? getActivityIndicator(topCategory[1]) : null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <GlassCard>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <GlassCard className="p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Updates Today</p>
@@ -34,7 +34,7 @@ export const MetricCards = ({ totalToday, highImpact, categoryBreakdown }: Metri
         </div>
       </GlassCard>
 
-      <GlassCard>
+      <GlassCard className="p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground mb-1">High Impact</p>
@@ -46,7 +46,7 @@ export const MetricCards = ({ totalToday, highImpact, categoryBreakdown }: Metri
         </div>
       </GlassCard>
 
-      <GlassCard>
+      <GlassCard className="p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Top Category</p>
