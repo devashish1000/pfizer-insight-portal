@@ -17,7 +17,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename="/pfizer-insight-portal">
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/clinical-trials" element={<ClinicalTrials />} />
