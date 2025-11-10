@@ -42,9 +42,10 @@ export interface IntelligenceData {
 
 interface IntelligenceTableProps {
   data: IntelligenceData[];
+  children?: React.ReactNode; // Content to render between separator and table
 }
 
-export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
+export const IntelligenceTable = ({ data, children }: IntelligenceTableProps) => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("All Categories");
   const [impactFilter, setImpactFilter] = useState<string>("All Impacts");
@@ -158,10 +159,11 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
   };
 
   return (
-    <GlassCard>
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
+    <>
+      {/* Filters Section */}
+      <div className="mb-6 p-0 bg-transparent">
+        <div className="flex flex-wrap gap-3 items-center w-full">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-glow/50 w-4 h-4" />
             <Input
               placeholder="Search updates..."
@@ -228,10 +230,6 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        {/* Date Range Filter */}
-        <div className="flex justify-end">
           <DateRangeFilter
             startDate={startDate}
             endDate={endDate}
@@ -239,8 +237,17 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
             onEndDateChange={setEndDate}
           />
         </div>
+      </div>
 
-        <div className="rounded-md border border-border overflow-hidden">
+      {/* Separator line */}
+      <div className="border-t border-cyan-glow/10 mb-6" />
+
+      {/* Content between separator and table (e.g., metrics) */}
+      {children}
+
+      {/* Data Table */}
+      <GlassCard>
+        <div className="space-y-4">
           <Table>
             <TableHeader>
               <TableRow className="border-cyan-glow/10 hover:bg-transparent">
@@ -325,7 +332,7 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
             </div>
           )}
         </div>
-      </div>
+      </GlassCard>
 
       {/* Detail Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -463,6 +470,6 @@ export const IntelligenceTable = ({ data }: IntelligenceTableProps) => {
           )}
         </DialogContent>
       </Dialog>
-    </GlassCard>
+    </>
   );
 };
