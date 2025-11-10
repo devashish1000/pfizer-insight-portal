@@ -10,6 +10,7 @@ interface MultiSelectDropdownProps {
   placeholder?: string;
   searchPlaceholder?: string;
   className?: string;
+  width?: string;
 }
 
 export const MultiSelectDropdown = ({
@@ -20,6 +21,7 @@ export const MultiSelectDropdown = ({
   placeholder = "Select...",
   searchPlaceholder = "Search...",
   className,
+  width = "180px",
 }: MultiSelectDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,17 +53,15 @@ export const MultiSelectDropdown = ({
 
   const displayText =
     selectedValues.length === 0
-      ? placeholder
-      : selectedValues.length === 1
-      ? selectedValues[0]
-      : `${selectedValues.length} selected`;
+      ? label
+      : `${label.replace(/^All /, "")}: ${selectedValues.length}`;
 
   return (
     <div ref={dropdownRef} className={cn("relative", className)}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="h-9 rounded-md border inline-flex items-center justify-between gap-2 min-w-[180px] transition-all focus:outline-none"
+        className="h-9 rounded-md border inline-flex items-center justify-between gap-2 transition-all focus:outline-none"
         style={{
           backgroundColor: "#ffffff",
           border: "1px solid #d0d5dd",
@@ -70,6 +70,7 @@ export const MultiSelectDropdown = ({
           fontSize: "14px",
           color: "#111827",
           fontFamily: "Inter, Arial, sans-serif",
+          width: width,
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = "#f9fafb";

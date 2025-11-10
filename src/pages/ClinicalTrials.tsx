@@ -353,12 +353,13 @@ const ClinicalTrials = () => {
             </select>
 
             <MultiSelectDropdown
-              label="Phases"
+              label="All Phases"
               options={trialPhases}
               selectedValues={trialPhaseFilter}
               onChange={setTrialPhaseFilter}
               placeholder="All Phases"
               searchPlaceholder="Search phases..."
+              width="180px"
             />
 
             <select
@@ -374,12 +375,13 @@ const ClinicalTrials = () => {
             </select>
 
             <MultiSelectDropdown
-              label="Status"
+              label="All Statuses"
               options={statuses}
               selectedValues={statusFilter}
               onChange={setStatusFilter}
               placeholder="All Statuses"
               searchPlaceholder="Search statuses..."
+              width="180px"
             />
 
             <DateRangeFilter
