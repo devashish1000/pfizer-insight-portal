@@ -37,6 +37,7 @@ interface GanttDataPoint {
   startOffset: number;
   duration: number;
   completionPercent: number;
+  completedDuration: number;
   startDate: string;
   endDate: string;
   therapeuticArea: string;
@@ -105,13 +106,17 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
           trendIcon = "▼";
         }
         
+        const totalDuration = (duration / timelineRange) * 100;
+        const completedDuration = totalDuration * (completionPercent / 100);
+        
         return {
           trialName: `${trial.drug_name} (${trial.trial_id})`,
           phase: trial.phase || "Unknown",
           status: trial.status || "Unknown",
           startOffset: (startOffset / timelineRange) * 100,
-          duration: (duration / timelineRange) * 100,
+          duration: totalDuration,
           completionPercent,
+          completedDuration,
           startDate: new Date(trial.start_date).toLocaleDateString("en-US", {
             month: "short",
             year: "numeric",
@@ -280,30 +285,48 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
           animationDuration={800}
         />
         
-        {/* Duration bar with completion overlay */}
+        {/* Duration bar (background - incomplete portion) */}
         <Bar
           dataKey="duration"
           stackId="timeline"
-          fill="#06b6d4"
+          fill="#334155"
           radius={[0, 8, 8, 0]}
           isAnimationActive={true}
           animationDuration={1000}
           animationBegin={200}
-          name="Trial Duration"
+          name="Remaining Duration"
+          onClick={handleBarClick}
+        >
+          {ganttData.map((entry, index) => (
+            <Cell
+              key={`cell-bg-${index}`}
+              fill="#334155"
+              opacity={0.3}
+              className="transition-all duration-300 cursor-pointer"
+            />
+          ))}
+        </Bar>
+        
+        {/* Completed portion bar */}
+        <Bar
+          dataKey="completedDuration"
+          stackId="timeline"
+          fill="#3b82f6"
+          radius={[0, 8, 8, 0]}
+          isAnimationActive={true}
+          animationDuration={1200}
+          animationBegin={400}
+          name="Completed"
           onClick={handleBarClick}
         >
           {ganttData.map((entry, index) => {
             const phaseColor = PHASE_COLORS[entry.phase as keyof typeof PHASE_COLORS] || PHASE_COLORS.default;
-            const statusColor = STATUS_COLORS[entry.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.default;
-            
-            // Use phase color with opacity based on completion
-            const opacity = 0.4 + (entry.completionPercent / 100) * 0.6;
             
             return (
               <Cell
-                key={`cell-${index}`}
+                key={`cell-complete-${index}`}
                 fill={phaseColor}
-                opacity={opacity}
+                opacity={0.9}
                 className="transition-all duration-300 hover:opacity-100 cursor-pointer"
               />
             );

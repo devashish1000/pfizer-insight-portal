@@ -144,13 +144,13 @@ export const TrialSitesMap = ({ data }: TrialSitesMapProps) => {
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill="rgba(6, 182, 212, 0.1)"
-                  stroke="rgba(6, 182, 212, 0.2)"
+                  fill="rgba(59, 130, 246, 0.08)"
+                  stroke="rgba(59, 130, 246, 0.2)"
                   strokeWidth={0.5}
                   style={{
                     default: { outline: "none" },
                     hover: { 
-                      fill: "rgba(6, 182, 212, 0.15)", 
+                      fill: "rgba(59, 130, 246, 0.15)", 
                       outline: "none",
                       cursor: "pointer"
                     },
@@ -173,37 +173,63 @@ export const TrialSitesMap = ({ data }: TrialSitesMapProps) => {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <g className="cursor-pointer transition-all duration-300 hover:scale-125">
+                      {/* Outer glow ring */}
                       <circle
-                        r={size}
-                        fill="rgba(6, 182, 212, 0.3)"
+                        r={size + 3}
+                        fill="rgba(59, 130, 246, 0.2)"
                         className="animate-pulse"
                       />
+                      {/* Middle ring */}
+                      <circle
+                        r={size}
+                        fill="rgba(59, 130, 246, 0.4)"
+                      />
+                      {/* Inner core */}
                       <circle
                         r={size * 0.6}
-                        fill="#06b6d4"
-                        stroke="#fff"
-                        strokeWidth={1.5}
+                        fill="#3b82f6"
+                        stroke="#60a5fa"
+                        strokeWidth={2}
                         className="drop-shadow-glow"
                       />
+                      {/* Count label */}
                       <text
                         textAnchor="middle"
-                        y={size + 12}
-                        style={{ fontSize: "10px", fill: "#e2e8f0", fontWeight: "500" }}
+                        y={size + 14}
+                        style={{ 
+                          fontSize: "11px", 
+                          fill: "#3b82f6", 
+                          fontWeight: "600",
+                          textShadow: "0 0 4px rgba(0,0,0,0.5)"
+                        }}
                       >
                         {marker.count}
                       </text>
                     </g>
                   </TooltipTrigger>
-                  <TooltipContent className="bg-card/95 border-cyan-glow/30 text-text-off-white max-w-xs">
-                    <div className="space-y-1">
-                      <p className="font-semibold">{marker.count} Trial{marker.count > 1 ? "s" : ""}</p>
-                      <p className="text-xs text-text-light-gray">Active: {activeTrials}</p>
-                      <div className="text-xs space-y-0.5 mt-2">
+                  <TooltipContent className="bg-card/95 backdrop-blur-sm border-blue-500/30 text-text-off-white max-w-xs shadow-lg">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                        <p className="font-semibold text-blue-400">{marker.count} Trial{marker.count > 1 ? "s" : ""} at this site</p>
+                      </div>
+                      <p className="text-xs text-text-light-gray">
+                        <span className="text-blue-400">Active:</span> {activeTrials} | <span className="text-text-light-gray">Others:</span> {marker.count - activeTrials}
+                      </p>
+                      <div className="border-t border-blue-500/20 pt-2 space-y-1">
+                        <p className="text-xs font-semibold text-blue-300">Trials:</p>
                         {marker.trials.slice(0, 3).map((t, i) => (
-                          <p key={i}>• {t.drug_name} ({t.phase})</p>
+                          <div key={i} className="text-xs flex items-start gap-1">
+                            <span className="text-blue-400">•</span>
+                            <div>
+                              <span className="text-text-off-white">{t.drug_name}</span>
+                              <span className="text-text-light-gray"> ({t.phase})</span>
+                              {t.status === "Active" && <span className="ml-1 text-green-400">✓</span>}
+                            </div>
+                          </div>
                         ))}
                         {marker.count > 3 && (
-                          <p className="text-cyan-glow">+{marker.count - 3} more</p>
+                          <p className="text-xs text-blue-400 font-medium">+{marker.count - 3} more trials</p>
                         )}
                       </div>
                     </div>
