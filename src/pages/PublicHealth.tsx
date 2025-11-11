@@ -7,10 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Globe2, TrendingUp, AlertTriangle, Activity } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const PublicHealth = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [selectedForecast, setSelectedForecast] = useState<typeof forecasts[0] | null>(null);
   
   // Dummy state for refresh - in production this would fetch actual data
   const handleRefresh = () => {
@@ -184,6 +186,7 @@ const PublicHealth = () => {
                   {paginatedForecasts.map((forecast) => (
                     <TableRow 
                       key={forecast.id}
+                      onClick={() => setSelectedForecast(forecast)}
                       className="border-cyan-glow/10 hover:bg-cyan-glow/5 transition-all duration-300 cursor-pointer"
                     >
                       <TableCell className="font-medium text-text-off-white">{forecast.id}</TableCell>
@@ -246,7 +249,8 @@ const PublicHealth = () => {
               {paginatedForecasts.map((forecast) => (
                 <div
                   key={forecast.id}
-                  className="p-5 rounded-lg bg-cyan-glow/5 border border-cyan-glow/10 hover:border-cyan-glow/30 transition-all duration-300"
+                  onClick={() => setSelectedForecast(forecast)}
+                  className="p-5 rounded-lg bg-cyan-glow/5 border border-cyan-glow/10 hover:border-cyan-glow/30 transition-all duration-300 cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -290,6 +294,78 @@ const PublicHealth = () => {
             </div>
           </GlassCard>
         </div>
+
+        {/* Forecast Detail Modal */}
+        <Dialog open={!!selectedForecast} onOpenChange={() => setSelectedForecast(null)}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-background/95 backdrop-blur-xl border-cyan-glow/20">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-foreground">
+                {selectedForecast?.title}
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedForecast && (
+              <div className="space-y-6 mt-4">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className={getSeverityColor(selectedForecast.severity)}>
+                    {selectedForecast.severity} Severity
+                  </Badge>
+                  <Badge variant="outline" className="border-border/30">
+                    {selectedForecast.confidence} Confidence
+                  </Badge>
+                  <Badge variant="outline" className="border-border/30">
+                    {selectedForecast.trend} Trend
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground mb-1">Forecast ID</p>
+                    <p className="text-foreground">{selectedForecast.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground mb-1">Timeframe</p>
+                    <p className="text-foreground">{selectedForecast.timeframe}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-sm font-semibold text-muted-foreground mb-1">Region</p>
+                    <p className="text-foreground">{selectedForecast.region}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground mb-2">Summary</p>
+                  <p className="text-foreground leading-relaxed">{selectedForecast.summary}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground mb-2">Key Indicators</p>
+                  <div className="space-y-2">
+                    {selectedForecast.keyIndicators.map((indicator, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-glow mt-2" />
+                        <p className="text-foreground">{indicator}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground mb-2">Trend Analysis</p>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-cyan-glow/5 border border-cyan-glow/10">
+                    <TrendingUp className={`w-6 h-6 ${getTrendColor(selectedForecast.trend)}`} />
+                    <div>
+                      <p className={`text-lg font-semibold ${getTrendColor(selectedForecast.trend)}`}>
+                        {selectedForecast.trend}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Current trajectory</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
