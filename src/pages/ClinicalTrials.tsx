@@ -11,6 +11,8 @@ import { TrialDetailModal } from "@/components/TrialDetailModal";
 import { MultiSelectDropdown } from "@/components/MultiSelectDropdown";
 import { Activity, CheckCircle2, HourglassIcon, Calendar, Flag, AlertTriangle, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { fetchClinicalTrialsData } from "@/lib/googleSheets";
 import { useState, useMemo, useEffect } from "react";
@@ -26,6 +28,10 @@ const ClinicalTrials = () => {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [selectedTrial, setSelectedTrial] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBottleneck, setSelectedBottleneck] = useState<any>(null);
+  const [isBottleneckDialogOpen, setIsBottleneckDialogOpen] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState<any>(null);
+  const [isMilestoneDialogOpen, setIsMilestoneDialogOpen] = useState(false);
   
   // Phase normalization function
   const normalizePhase = (phase: string): string => {
@@ -244,6 +250,7 @@ const ClinicalTrials = () => {
           icon: isOnTrack ? CheckCircle2 : isDelayed ? AlertCircle : HourglassIcon,
           iconColor: isOnTrack ? "text-success" : isAtRisk ? "text-warning" : "text-destructive",
           bgColor: isOnTrack ? "bg-success/20" : isAtRisk ? "bg-warning/20" : "bg-destructive/20",
+          trialData: t, // Store full trial data for dialog
         };
       })
       .slice(0, 5);
@@ -262,6 +269,7 @@ const ClinicalTrials = () => {
           title: t.bottleneck_category,
           description: t.bottleneck_description || `${t.trial_id} (${t.drug_name})`,
           trial: `${t.trial_id} - ${t.drug_name}`,
+          trialData: t, // Store full trial data for dialog
           severity: isCritical ? "high" : "medium",
           color: isCritical ? "bg-destructive" : "bg-warning",
           shadowColor: isCritical ? "shadow-glow-red" : "shadow-glow-amber",
@@ -497,6 +505,10 @@ const ClinicalTrials = () => {
                     bottlenecks.map((bottleneck) => (
                       <div
                         key={bottleneck.id}
+                        onClick={() => {
+                          setSelectedBottleneck(bottleneck);
+                          setIsBottleneckDialogOpen(true);
+                        }}
                         className={`group flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-all duration-300 hover:scale-102 border ${
                           bottleneck.severity === 'high' 
                             ? 'bg-destructive/10 border-destructive/20 hover:bg-destructive/20' 
@@ -546,12 +558,17 @@ const ClinicalTrials = () => {
                         <div className="h-full w-[2px] bg-gradient-to-b from-cyan-glow/40 to-cyan-glow/10" />
                       )}
                     </div>
-                    <div className={`-ml-2 flex flex-1 cursor-pointer flex-col rounded-lg p-3 pb-4 transition-all duration-300 ${
-                      milestone.status === 'On Track' ? 'bg-success/5 hover:bg-success/10' :
-                      milestone.status === 'At Risk' ? 'bg-warning/5 hover:bg-warning/10' : 
-                      milestone.status === 'Delayed' ? 'bg-destructive/5 hover:bg-destructive/10' :
-                      'hover:bg-cyan-glow/10'
-                    } hover:scale-102 border border-transparent hover:border-cyan-glow/20`}>
+                    <div 
+                      onClick={() => {
+                        setSelectedMilestone(milestone);
+                        setIsMilestoneDialogOpen(true);
+                      }}
+                      className={`-ml-2 flex flex-1 cursor-pointer flex-col rounded-lg p-3 pb-4 transition-all duration-300 ${
+                        milestone.status === 'On Track' ? 'bg-success/5 hover:bg-success/10' :
+                        milestone.status === 'At Risk' ? 'bg-warning/5 hover:bg-warning/10' : 
+                        milestone.status === 'Delayed' ? 'bg-destructive/5 hover:bg-destructive/10' :
+                        'hover:bg-cyan-glow/10'
+                      } hover:scale-102 border border-transparent hover:border-cyan-glow/20`}>
                       <p className="text-sm font-semibold leading-normal text-text-off-white">{milestone.title}</p>
                       <p className="text-xs leading-normal text-text-light-gray mt-1">{milestone.date}</p>
                       <Badge 
@@ -584,6 +601,171 @@ const ClinicalTrials = () => {
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
         />
+
+        {/* Bottleneck Detail Dialog */}
+        <Dialog open={isBottleneckDialogOpen} onOpenChange={setIsBottleneckDialogOpen}>
+          <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-sm border-border/50">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <AlertTriangle className={selectedBottleneck?.iconColor} />
+                Bottleneck Details
+              </DialogTitle>
+              <DialogDescription>
+                {selectedBottleneck?.trial}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedBottleneck && (
+              <div className="space-y-4 mt-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">Category</h4>
+                  <Badge variant="outline" className={`${
+                    selectedBottleneck.severity === 'high' 
+                      ? 'border-destructive/40 text-destructive' 
+                      : 'border-warning/40 text-warning'
+                  }`}>
+                    {selectedBottleneck.title}
+                  </Badge>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">Description</h4>
+                  <p className="text-foreground">{selectedBottleneck.description}</p>
+                </div>
+
+                {selectedBottleneck.trialData && (
+                  <>
+                    <Separator />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Trial ID</h4>
+                        <p className="text-foreground">{selectedBottleneck.trialData.trial_id}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Drug Name</h4>
+                        <p className="text-foreground">{selectedBottleneck.trialData.drug_name}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Phase</h4>
+                        <p className="text-foreground">{selectedBottleneck.trialData.phase}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Status</h4>
+                        <Badge variant="outline">{selectedBottleneck.trialData.status}</Badge>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Region</h4>
+                        <p className="text-foreground">{selectedBottleneck.trialData.region}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Severity</h4>
+                        <Badge variant="outline" className={selectedBottleneck.severity === 'high' ? 'bg-destructive/20 border-destructive' : 'bg-warning/20 border-warning'}>
+                          {selectedBottleneck.severity === 'high' ? 'Critical' : 'Moderate'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Milestone Detail Dialog */}
+        <Dialog open={isMilestoneDialogOpen} onOpenChange={setIsMilestoneDialogOpen}>
+          <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-sm border-border/50">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Flag className="text-primary" />
+                Milestone Details
+              </DialogTitle>
+              <DialogDescription>
+                {selectedMilestone?.title}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedMilestone && (
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center gap-3">
+                  <div className={`flex size-10 items-center justify-center rounded-full border-2 ${
+                    selectedMilestone.status === 'On Track' ? 'bg-success/20 border-success' :
+                    selectedMilestone.status === 'At Risk' ? 'bg-warning/20 border-warning' :
+                    selectedMilestone.status === 'Delayed' ? 'bg-destructive/20 border-destructive' :
+                    'bg-cyan-glow/10 border-cyan-glow/30'
+                  }`}>
+                    <selectedMilestone.icon className={`w-5 h-5 ${selectedMilestone.iconColor}`} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Status</h4>
+                    <Badge variant="outline" className={`mt-1 ${
+                      selectedMilestone.status === 'On Track' ? 'border-success/40 text-success' :
+                      selectedMilestone.status === 'At Risk' ? 'border-warning/40 text-warning' :
+                      selectedMilestone.status === 'Delayed' ? 'border-destructive/40 text-destructive' :
+                      'border-text-light-gray/40 text-text-light-gray'
+                    }`}>
+                      {selectedMilestone.status === 'On Track' ? '🟢 On Track' : 
+                       selectedMilestone.status === 'At Risk' ? '🟡 At Risk' : 
+                       selectedMilestone.status === 'Delayed' ? '🔴 Delayed' : 
+                       selectedMilestone.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-muted-foreground">Due Date</h4>
+                    <p className="text-foreground mt-1">{selectedMilestone.date}</p>
+                  </div>
+                </div>
+
+                {selectedMilestone.trialData && (
+                  <>
+                    <Separator />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Trial ID</h4>
+                        <p className="text-foreground">{selectedMilestone.trialData.trial_id}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Drug Name</h4>
+                        <p className="text-foreground">{selectedMilestone.trialData.drug_name}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Phase</h4>
+                        <p className="text-foreground">{selectedMilestone.trialData.phase}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Therapeutic Area</h4>
+                        <p className="text-foreground">{selectedMilestone.trialData.therapeutic_area}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Region</h4>
+                        <p className="text-foreground">{selectedMilestone.trialData.region}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-1">Enrollment Progress</h4>
+                        <p className="text-foreground">{selectedMilestone.trialData.completion_percent || '0'}%</p>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">Milestone</h4>
+                      <p className="text-foreground">{selectedMilestone.trialData.key_milestone}</p>
+                    </div>
+
+                    {selectedMilestone.trialData.site_locations && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-2">Trial Sites</h4>
+                        <p className="text-foreground">{selectedMilestone.trialData.site_locations}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
