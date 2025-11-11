@@ -40,6 +40,8 @@ interface GanttDataPoint {
   startDate: string;
   endDate: string;
   therapeuticArea: string;
+  trend: string;
+  trendIcon: string;
   originalTrial: TrialData;
 }
 
@@ -87,6 +89,21 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
         const endTime = new Date(trial.expected_end_date).getTime();
         const duration = endTime - startTime;
         const startOffset = startTime - minDate;
+        const completionPercent = parseFloat(trial.completion_percent) || 0;
+        
+        // Calculate trend based on completion percentage
+        let trend = "";
+        let trendIcon = "";
+        if (completionPercent >= 75) {
+          trend = "On Schedule";
+          trendIcon = "▲";
+        } else if (completionPercent >= 40) {
+          trend = "Moderate Progress";
+          trendIcon = "◕";
+        } else {
+          trend = "Behind";
+          trendIcon = "▼";
+        }
         
         return {
           trialName: `${trial.drug_name} (${trial.trial_id})`,
@@ -94,7 +111,7 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
           status: trial.status || "Unknown",
           startOffset: (startOffset / timelineRange) * 100,
           duration: (duration / timelineRange) * 100,
-          completionPercent: parseFloat(trial.completion_percent) || 0,
+          completionPercent,
           startDate: new Date(trial.start_date).toLocaleDateString("en-US", {
             month: "short",
             year: "numeric",
@@ -104,6 +121,8 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
             year: "numeric",
           }),
           therapeuticArea: trial.therapeutic_area || "N/A",
+          trend,
+          trendIcon,
           originalTrial: trial,
         };
       });
@@ -129,19 +148,26 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
           <p className="font-semibold text-text-off-white mb-2">{data.trialName}</p>
           <div className="space-y-1 text-xs">
             <p className="text-text-light-gray">
+              <span className="text-cyan-glow">Drug:</span> {data.originalTrial.drug_name}
+            </p>
+            <p className="text-text-light-gray">
               <span className="text-cyan-glow">Phase:</span> {data.phase}
             </p>
             <p className="text-text-light-gray">
               <span className="text-cyan-glow">Status:</span> {data.status}
             </p>
             <p className="text-text-light-gray">
-              <span className="text-cyan-glow">Timeline:</span> {data.startDate} → {data.endDate}
+              <span className="text-cyan-glow">Start:</span> {data.startDate} → <span className="text-cyan-glow">End:</span> {data.endDate}
             </p>
             <p className="text-text-light-gray">
               <span className="text-cyan-glow">Progress:</span> {data.completionPercent.toFixed(1)}%
             </p>
-            <p className="text-text-light-gray">
-              <span className="text-cyan-glow">Area:</span> {data.therapeuticArea}
+            <p className={`text-sm font-semibold ${
+              data.completionPercent >= 75 ? 'text-success' : 
+              data.completionPercent >= 40 ? 'text-warning' : 
+              'text-destructive'
+            }`}>
+              <span className="text-cyan-glow">Trend:</span> {data.trendIcon} {data.trend}
             </p>
           </div>
         </div>
@@ -209,7 +235,33 @@ export const TrialsGanttChart = ({ data, maxTrials = 10, onTrialClick }: TrialsG
           type="category"
           dataKey="trialName"
           width={200}
-          tick={{ fill: "#e2e8f0", fontSize: 11 }}
+          tick={(props) => {
+            const { x, y, payload } = props;
+            const dataPoint = ganttData.find(d => d.trialName === payload.value);
+            return (
+              <g transform={`translate(${x},${y})`}>
+                <text x={0} y={0} dy={4} textAnchor="end" fill="#e2e8f0" fontSize={11}>
+                  {payload.value}
+                </text>
+                {dataPoint && (
+                  <text 
+                    x={-5} 
+                    y={0} 
+                    dy={4} 
+                    textAnchor="end" 
+                    fontSize={10}
+                    fill={
+                      dataPoint.completionPercent >= 75 ? '#22c55e' : 
+                      dataPoint.completionPercent >= 40 ? '#facc15' : 
+                      '#ef4444'
+                    }
+                  >
+                    {dataPoint.trendIcon}
+                  </text>
+                )}
+              </g>
+            );
+          }}
           axisLine={{ stroke: "rgba(6, 182, 212, 0.2)" }}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(6, 182, 212, 0.1)" }} />

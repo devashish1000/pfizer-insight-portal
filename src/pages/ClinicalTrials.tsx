@@ -488,18 +488,24 @@ const ClinicalTrials = () => {
                     bottlenecks.map((bottleneck) => (
                       <div
                         key={bottleneck.id}
-                        className="group flex cursor-pointer items-start gap-3 rounded-lg bg-cyan-glow/10 p-3 transition-all duration-300 hover:bg-cyan-glow/20 hover:scale-102"
+                        className={`group flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-all duration-300 hover:scale-102 border ${
+                          bottleneck.severity === 'high' 
+                            ? 'bg-destructive/10 border-destructive/20 hover:bg-destructive/20' 
+                            : 'bg-warning/10 border-warning/20 hover:bg-warning/20'
+                        }`}
                       >
-                        <div className={`h-10 w-1.5 rounded-full ${bottleneck.color} ${bottleneck.shadowColor}`} />
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-background/50">
+                          <span className="text-lg">{bottleneck.severity === 'high' ? '⚠️' : '⚠️'}</span>
+                        </div>
                         <div className="flex-1">
                           <p className="font-semibold text-text-off-white">{bottleneck.title}</p>
                           <p className="text-sm text-text-light-gray">{bottleneck.description}</p>
                         </div>
-                        <AlertTriangle className={`ml-auto w-5 h-5 ${bottleneck.iconColor} transition-all duration-300 group-hover:scale-125 group-hover:text-cyan-glow`} />
+                        <AlertTriangle className={`ml-auto w-5 h-5 ${bottleneck.iconColor} transition-all duration-300 group-hover:scale-125`} />
                       </div>
                     ))
                   ) : (
-                    <p className="text-text-light-gray text-sm text-center py-8">No bottlenecks detected</p>
+                    <p className="text-text-light-gray text-sm text-center py-8">No bottlenecks detected.</p>
                   )}
                 </div>
               </GlassCard>
@@ -519,18 +525,35 @@ const ClinicalTrials = () => {
                 milestones.map((milestone, index) => (
                   <div key={milestone.id} className="grid grid-cols-[32px_1fr] gap-x-2">
                     <div className="flex flex-col items-center gap-1 pt-2">
-                      <div className={`relative flex size-8 items-center justify-center rounded-full ${milestone.bgColor}`}>
-                        <milestone.icon className={`w-5 h-5 ${milestone.iconColor}`} />
+                      <div className={`relative flex size-8 items-center justify-center rounded-full border-2 ${
+                        milestone.status === 'completed' ? 'bg-success/20 border-success' :
+                        milestone.status === 'active' ? 'bg-cyan-glow/20 border-cyan-glow' :
+                        'bg-cyan-glow/10 border-cyan-glow/30'
+                      }`}>
+                        <milestone.icon className={`w-4 h-4 ${milestone.iconColor}`} />
                       </div>
                       {index < milestones.length - 1 && (
-                        <div className="h-full w-[2px] bg-cyan-glow/20" />
+                        <div className="h-full w-[2px] bg-gradient-to-b from-cyan-glow/40 to-cyan-glow/10" />
                       )}
                     </div>
-                    <div className={`-ml-2 flex flex-1 cursor-pointer flex-col rounded-lg p-2 pb-4 transition-all duration-300 ${
-                      milestone.status === 'active' ? 'bg-cyan-glow/10' : 'hover:bg-cyan-glow/10'
-                    } hover:scale-102`}>
-                      <p className="text-sm font-medium leading-normal text-text-off-white">{milestone.title}</p>
-                      <p className="text-xs leading-normal text-text-light-gray">{milestone.date}</p>
+                    <div className={`-ml-2 flex flex-1 cursor-pointer flex-col rounded-lg p-3 pb-4 transition-all duration-300 ${
+                      milestone.status === 'completed' ? 'bg-success/5 hover:bg-success/10' :
+                      milestone.status === 'active' ? 'bg-cyan-glow/10 hover:bg-cyan-glow/15' : 
+                      'hover:bg-cyan-glow/10'
+                    } hover:scale-102 border border-transparent hover:border-cyan-glow/20`}>
+                      <p className="text-sm font-semibold leading-normal text-text-off-white">{milestone.title}</p>
+                      <p className="text-xs leading-normal text-text-light-gray mt-1">{milestone.date}</p>
+                      <Badge 
+                        variant="outline" 
+                        className={`mt-2 w-fit text-[10px] px-2 py-0 ${
+                          milestone.status === 'completed' ? 'border-success/40 text-success' :
+                          milestone.status === 'active' ? 'border-cyan-glow/40 text-cyan-glow' :
+                          'border-text-light-gray/40 text-text-light-gray'
+                        }`}
+                      >
+                        {milestone.status === 'completed' ? 'Completed' : 
+                         milestone.status === 'active' ? 'On Track' : 'Upcoming'}
+                      </Badge>
                     </div>
                   </div>
                 ))
