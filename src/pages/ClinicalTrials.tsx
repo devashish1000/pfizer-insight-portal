@@ -9,7 +9,7 @@ import { TrialsGanttChart } from "@/components/TrialsGanttChart";
 import { TrialSitesMap } from "@/components/TrialSitesMap";
 import { TrialDetailModal } from "@/components/TrialDetailModal";
 import { MultiSelectDropdown } from "@/components/MultiSelectDropdown";
-import { Activity, CheckCircle2, HourglassIcon, Calendar, Flag, AlertTriangle, MapPin } from "lucide-react";
+import { Activity, CheckCircle2, HourglassIcon, Calendar, Flag, AlertTriangle, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { fetchClinicalTrialsData } from "@/lib/googleSheets";
@@ -227,22 +227,25 @@ const ClinicalTrials = () => {
   // Get milestones for timeline
   const milestones = useMemo(() => {
     return filteredData
-      .filter((t) => t.key_milestone)
-      .map((t, index) => ({
-        id: index + 1,
-        title: `${t.key_milestone} (${t.drug_name})`,
-        date: t.next_milestone_date 
-          ? new Date(t.next_milestone_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-          : "TBD",
-        status: t.milestone_status?.toLowerCase() === "completed" ? "completed" : 
-                t.milestone_status?.toLowerCase() === "active" ? "active" : "upcoming",
-        icon: t.milestone_status?.toLowerCase() === "completed" ? CheckCircle2 :
-              t.milestone_status?.toLowerCase() === "active" ? HourglassIcon : Calendar,
-        iconColor: t.milestone_status?.toLowerCase() === "completed" ? "text-success" :
-                   t.milestone_status?.toLowerCase() === "active" ? "text-cyan-glow" : "text-text-light-gray",
-        bgColor: t.milestone_status?.toLowerCase() === "completed" ? "bg-success/20" :
-                 t.milestone_status?.toLowerCase() === "active" ? "bg-cyan-glow/20" : "bg-cyan-glow/10",
-      }))
+      .filter((t) => t.key_milestone && t.next_milestone_date)
+      .map((t, index) => {
+        const statusLower = t.milestone_status?.toLowerCase() || "";
+        const isOnTrack = statusLower === "on track";
+        const isAtRisk = statusLower === "at risk";
+        const isDelayed = statusLower === "delayed";
+        
+        return {
+          id: index + 1,
+          title: `${t.key_milestone} (${t.drug_name})`,
+          date: t.next_milestone_date 
+            ? new Date(t.next_milestone_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+            : "TBD",
+          status: isOnTrack ? "On Track" : isAtRisk ? "At Risk" : isDelayed ? "Delayed" : "Pending",
+          icon: isOnTrack ? CheckCircle2 : isDelayed ? AlertCircle : HourglassIcon,
+          iconColor: isOnTrack ? "text-success" : isAtRisk ? "text-warning" : "text-destructive",
+          bgColor: isOnTrack ? "bg-success/20" : isAtRisk ? "bg-warning/20" : "bg-destructive/20",
+        };
+      })
       .slice(0, 5);
   }, [filteredData]);
 
@@ -250,15 +253,21 @@ const ClinicalTrials = () => {
   const bottlenecks = useMemo(() => {
     return filteredData
       .filter((t) => t.bottleneck_category && t.bottleneck_description)
-      .map((t, index) => ({
-        id: index + 1,
-        title: t.bottleneck_category,
-        description: `${t.trial_id} (${t.drug_name}) - ${t.region}`,
-        severity: t.bottleneck_category?.toLowerCase().includes("delay") || t.bottleneck_category?.toLowerCase().includes("adverse") ? "high" : "medium",
-        color: t.bottleneck_category?.toLowerCase().includes("delay") || t.bottleneck_category?.toLowerCase().includes("adverse") ? "bg-destructive" : "bg-warning",
-        shadowColor: t.bottleneck_category?.toLowerCase().includes("delay") || t.bottleneck_category?.toLowerCase().includes("adverse") ? "shadow-glow-red" : "shadow-glow-amber",
-        iconColor: t.bottleneck_category?.toLowerCase().includes("delay") || t.bottleneck_category?.toLowerCase().includes("adverse") ? "text-destructive" : "text-warning",
-      }))
+      .map((t, index) => {
+        const isCritical = t.bottleneck_category?.toLowerCase().includes("delay") || 
+                          t.bottleneck_category?.toLowerCase().includes("adverse") ||
+                          t.bottleneck_category?.toLowerCase().includes("site");
+        return {
+          id: index + 1,
+          title: t.bottleneck_category,
+          description: t.bottleneck_description || `${t.trial_id} (${t.drug_name})`,
+          trial: `${t.trial_id} - ${t.drug_name}`,
+          severity: isCritical ? "high" : "medium",
+          color: isCritical ? "bg-destructive" : "bg-warning",
+          shadowColor: isCritical ? "shadow-glow-red" : "shadow-glow-amber",
+          iconColor: isCritical ? "text-destructive" : "text-warning",
+        };
+      })
       .slice(0, 4);
   }, [filteredData]);
 
@@ -526,8 +535,9 @@ const ClinicalTrials = () => {
                   <div key={milestone.id} className="grid grid-cols-[32px_1fr] gap-x-2">
                     <div className="flex flex-col items-center gap-1 pt-2">
                       <div className={`relative flex size-8 items-center justify-center rounded-full border-2 ${
-                        milestone.status === 'completed' ? 'bg-success/20 border-success' :
-                        milestone.status === 'active' ? 'bg-cyan-glow/20 border-cyan-glow' :
+                        milestone.status === 'On Track' ? 'bg-success/20 border-success' :
+                        milestone.status === 'At Risk' ? 'bg-warning/20 border-warning' :
+                        milestone.status === 'Delayed' ? 'bg-destructive/20 border-destructive' :
                         'bg-cyan-glow/10 border-cyan-glow/30'
                       }`}>
                         <milestone.icon className={`w-4 h-4 ${milestone.iconColor}`} />
@@ -537,8 +547,9 @@ const ClinicalTrials = () => {
                       )}
                     </div>
                     <div className={`-ml-2 flex flex-1 cursor-pointer flex-col rounded-lg p-3 pb-4 transition-all duration-300 ${
-                      milestone.status === 'completed' ? 'bg-success/5 hover:bg-success/10' :
-                      milestone.status === 'active' ? 'bg-cyan-glow/10 hover:bg-cyan-glow/15' : 
+                      milestone.status === 'On Track' ? 'bg-success/5 hover:bg-success/10' :
+                      milestone.status === 'At Risk' ? 'bg-warning/5 hover:bg-warning/10' : 
+                      milestone.status === 'Delayed' ? 'bg-destructive/5 hover:bg-destructive/10' :
                       'hover:bg-cyan-glow/10'
                     } hover:scale-102 border border-transparent hover:border-cyan-glow/20`}>
                       <p className="text-sm font-semibold leading-normal text-text-off-white">{milestone.title}</p>
@@ -546,13 +557,16 @@ const ClinicalTrials = () => {
                       <Badge 
                         variant="outline" 
                         className={`mt-2 w-fit text-[10px] px-2 py-0 ${
-                          milestone.status === 'completed' ? 'border-success/40 text-success' :
-                          milestone.status === 'active' ? 'border-cyan-glow/40 text-cyan-glow' :
+                          milestone.status === 'On Track' ? 'border-success/40 text-success' :
+                          milestone.status === 'At Risk' ? 'border-warning/40 text-warning' :
+                          milestone.status === 'Delayed' ? 'border-destructive/40 text-destructive' :
                           'border-text-light-gray/40 text-text-light-gray'
                         }`}
                       >
-                        {milestone.status === 'completed' ? 'Completed' : 
-                         milestone.status === 'active' ? 'On Track' : 'Upcoming'}
+                        {milestone.status === 'On Track' ? '🟢 On Track' : 
+                         milestone.status === 'At Risk' ? '🟡 At Risk' : 
+                         milestone.status === 'Delayed' ? '🔴 Delayed' : 
+                         milestone.status}
                       </Badge>
                     </div>
                   </div>
